@@ -75,7 +75,7 @@ function nameOf(n){return{mark:'Марк',mey:'Мэй',flint:'Флинт'}[n]}
 function fmt(g){return g.t==='sub'?String(g.n):'('+g.x+', '+g.y+')'}
 function explain(L,before,after,opp){const m=gMoves(before).filter(p=>!gWin(p))[0];
  if(before.t==='sub'){const K=before.k+1;const w=[1,2,3,4][Math.max(0,after.n%K-1)];
-  if(m.n===0)return 'Можно было сразу взять '+before.n+' и забрать последнюю! А теперь '+nameOf(opp)+' заберёт остаток.';
+  if(m.n===0)return 'Можно было сразу взять '+before.n+' и забрать всё сразу! А теперь последнее заберёт '+nameOf(opp)+'.';
   return 'Ты оставил '+after.n+' — это не делится на '+K+'. '+nameOf(opp)+' возьмёт '+(after.n%K)+' и оставит '+(after.n-after.n%K)+'. Нужно было взять '+(before.n-m.n)+' и оставить '+m.n+'.'}
  return 'Корабль не на крестике: '+nameOf(opp)+' сможет приплыть на крестик. Лучше было плыть на мерцающую клетку.'}
 // L.g — позиция, L.turn 'me'|'ai'. Возвращает true, если ребёнок взял последний / доплыл
