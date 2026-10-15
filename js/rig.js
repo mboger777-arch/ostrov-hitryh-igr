@@ -41,9 +41,9 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  const hf=HF[c.n];if(hf){let vf=visFor(c);if(vf===0&&blinkOn(c))vf=5;const v=UA['v_'+c.n+vf];if(okI(v)){const hw=hf[2]*w,hh=hw*v.naturalHeight/v.naturalWidth;X.drawImage(v,hf[0]*w-hw/2,hf[1]*h-hh/2,hw,hh)}
   if(hf[3]){X.beginPath();X.rect(-w,-h,w*3,h+hf[3]*h);X.clip();X.drawImage(im,0,0,w,h)}}
  X.restore();X.restore();
- if(puz>0&&c.n!=='flint'){const hx2=c.x,hy=c.y-h*1.02+dy;txt('?',hx2+Math.sin(T*6)*4,hy-10*Math.sin(puz*3),44*Math.min(1,puz*3),'#ffe066')}
- if(c.mood==='laugh'&&T-c.moodT<1.5)txt(c.n==='flint'?'Кар-р!':'Ха-ха!',c.x,c.y-h*1.05,40,'#ffe9a0')}
-const HF={"tim": [0.53, 0.235, 1.22, 0], "mark": [0.52, 0.34, 0.8, 0.215], "mey": [0.52, 0.36, 0.8, 0.22], "flint": [0.43, 0.27, 1.12, 0]};
+ if(puz>0&&c.n!=='flint')REACT.push({t:'?',x:c.x+Math.sin(T*6)*4,y:c.y-h*1.02+dy-10*Math.sin(puz*3),s:44*Math.min(1,puz*3),col:'#ffe066',c});
+ if(c.mood==='laugh'&&T-c.moodT<1.5)REACT.push({t:c.n==='flint'?'Кар-р!':'Ха-ха!',x:c.x,y:c.y-h*1.05,s:40,col:'#ffe9a0',c})}
+const HF={};
 // 0 закрыт · 1 приоткрыт · 2 широко · 3 «О» · 4 улыбка · 5 моргание — по громкости голоса
 function visFor(c){if(c.forceV!=null)return c.forceV;const talking=talk&&talk.who===c.n;
  if(talking){if(!c.vs)c.vs={f:0,t:0,env:0};const v=c.vs;const a=ampNow(c);v.env=v.env*.6+a*.4;
@@ -51,3 +51,10 @@ function visFor(c){if(c.forceV!=null)return c.forceV;const talking=talk&&talk.wh
  if(c.wob&&T-c.wob<1.2)return 3;if(c.jump&&T-c.jump<1.2)return 4;if(c.mood==='happy'&&T-c.moodT<2)return 4;if(c.mood==='laugh'&&T-c.moodT<1.6)return 4;if(c.n==='flint'&&c.hit&&T-c.hit<1)return 3;return 0}
 function blinkOn(c){if(c.forceV!=null)return false;if(!c.blN){c.blN=T+rnd(1,4);c.bl2=0}if(T>c.blN+.12){if(!c.bl2&&Math.random()<.25){c.bl2=1;c.blN=T+.12}else{c.bl2=0;c.blN=T+rnd(2.5,5)}}return T>=c.blN&&T<c.blN+.12}
 G.vis=n=>{const c=cast.find(c=>c.n===n);return c?visFor(c):-1};
+const REACT=[];
+// реплики-реакции рисуются поверх всего и никогда не залезают на облачко речи
+function drawReacts(){const box=talk&&talk.box;for(const r of REACT){if(r.s<4)continue;X.font=r.s+'px '+FONT;const w=X.measureText(r.t).width+12,h=r.s*1.1;
+ const hit=(x,y)=>box&&x+w/2>box[0]-6&&x-w/2<box[0]+box[2]+6&&y+h/2>box[1]-6&&y-h/2<box[1]+box[3]+6;
+ const hw=r.c.h*.35;const cand=[[r.x,r.y],[r.x+(r.c.x>640?-1:1)*(hw+w/2),r.y+r.c.h*.25],[r.x-(r.c.x>640?-1:1)*(hw+w/2),r.y+r.c.h*.25],[r.x,box?box[1]-h/2-8:r.y],[r.x,r.y+r.c.h*.45]];
+ let p=null;for(const q of cand){q[0]=clamp(q[0],w/2+4,1276-w/2);q[1]=clamp(q[1],h/2+4,716-h/2);if(!hit(q[0],q[1])){p=q;break}}if(!p)p=cand[0];
+ r.px=p[0];r.py=p[1];txt(r.t,p[0],p[1],r.s,r.col)}G.reacts=REACT.map(r=>{X.font=r.s+'px '+FONT;return{t:r.t,x:r.px,y:r.py,w:X.measureText(r.t).width,h:r.s}});G.rbox=box;REACT.length=0}

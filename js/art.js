@@ -2,7 +2,6 @@
 // ===== Рисованная графика: всё из нарисованных спрайтов (окна 9-slice, кнопки-доски и компас, дублоны, ядра, тарелки, частицы) =====
 const UA={};function ua(n){const i=new Image();i.src='assets/ui/'+n+'.png';UA[n]=i;return i}
 ['coin','chest','ball','balls','plate','ship','xmark','plank','compass','frame','scroll','bubble','logo','star','shadow','cell','tabletop'].forEach(ua);
-['tim','mark','mey','flint'].forEach(w=>{for(let i=0;i<6;i++)ua('v_'+w+i)});
 const SPL=[];for(let i=0;i<7;i++)SPL.push(ua('p_splash'+i));
 const okI=i=>i&&i.complete&&i.naturalWidth>0;
 const GREY={};function grey(n){if(GREY[n])return GREY[n];const i=UA[n];if(!okI(i))return null;const c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const g=c.getContext('2d');g.drawImage(i,0,0);
@@ -51,7 +50,7 @@ function drawParticles(){for(const p of PS){X.save();X.globalAlpha=Math.min(1,p.
  else{if(p.kind==='mote')X.globalCompositeOperation='lighter';const s=p.s*(p.kind==='mote'?2.6:4.5);X.scale(Math.cos(T*6+p.rot*3),1);dimg('coin',-s/2,-s/2,s,s)}
  X.restore()}}
 // ---- облачко речи: пергаментный пузырь ----
-function drawTalk(){if(!talk)return;const c=cast.find(c=>c.n===talk.who);const fs=26,lh=32;X.font=fs+'px '+FONT;const maxW=c?440:860;const L=wrap(talk.text,maxW);
+function drawTalk(){if(!talk){drawReacts();return}const c=cast.find(c=>c.n===talk.who);const fs=26,lh=32;X.font=fs+'px '+FONT;const maxW=c?440:860;const L=wrap(talk.text,maxW);
  X.font=fs+'px '+FONT;const tw=Math.max(...L.map(l=>X.measureText(l).width));X.font='24px '+FONT;const nw=c?X.measureText(NAMES[c.n][0]).width:0;
  const padX=46,padY=34;const bw=Math.max(240,Math.max(tw,nw)+padX*2);const textH=L.length*lh+(c?32:0);
  const bi=UA.bubble,iw=okI(bi)?bi.naturalWidth:257,ih=okI(bi)?bi.naturalHeight:185;const tailF=.24;// доля высоты спрайта под хвостик
@@ -63,5 +62,5 @@ function drawTalk(){if(!talk)return;const c=cast.find(c=>c.n===talk.who);const f
  win('bubble',bx,by,bw,bh,flip);const cx=bx+bw/2;let y0=by+bodyH/2-textH/2;
  if(c){txt(NAMES[c.n][0],cx,y0+12,24,NAMES[c.n][1],{st:'#fff4dc',lw:5});y0+=32}
  L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#2a1004',{st:'rgba(255,244,220,.7)',lw:3}));X.restore();
- talk.box=[bx,by,bw,bh]}
+ talk.box=[bx,by,bw,bh];drawReacts()}
 go('title');requestAnimationFrame(loop);
