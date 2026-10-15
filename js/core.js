@@ -89,7 +89,12 @@ function oops(n){const c=cast.find(c=>c.n===n);if(c)c.wob=T}
 const HERO_K=1.3,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),safe=Math.max(20,Math.min(60,(v.w-1280)/2+20)),big=scene==='intro'||scene==='title'||scene==='fin';
  c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);if(big){c.x=c.bx;return}
  const hw=c.h*.3,lo=Math.max(v.x0+safe,0)+hw*.8,hi=Math.min(v.x0+v.w-safe,1280)-hw*.8;if(c.bx<640)c.x=Math.max(lo,Math.min(c.bx,c.bx-(c.h-c.h0)*.35));else c.x=Math.min(hi,Math.max(c.bx,c.bx+(c.h-c.h0)*.35))}
-function drawCast(){cast.forEach(c=>{heroFit(c);drawHero(c)})}
+// герои никогда не касаются друг друга: раздвигаем по ширине их картинки (+зазор), не выходя за картину
+const HERO_GAP=14;function heroW(c){const i=IM[c.n];return i&&i.naturalWidth?c.h*i.naturalWidth/i.naturalHeight:c.h*.6}
+function separate(){const L=cast.slice().sort((a,b)=>a.x-b.x);for(let it=0;it<6;it++){let moved=false;
+ for(let i=1;i<L.length;i++){const a=L[i-1],b=L[i],need=(heroW(a)+heroW(b))/2+HERO_GAP,d=b.x-a.x;if(d<need){const k=(need-d)/2;a.x-=k;b.x+=k;moved=true}}
+ for(const c of L){const hw=heroW(c)/2;c.x=clamp(c.x,hw+4,1276-hw)}if(!moved)break}}
+function drawCast(){cast.forEach(heroFit);separate();cast.forEach(drawHero)}
 // ---- сцены ----
 const SC={};let scene='title',SCN=null;
 function go(n,arg){scene=n;SCN=SC[n];fade=1;talk=null;if(skipTalk)skipTalk();SCN.enter&&SCN.enter(arg)}

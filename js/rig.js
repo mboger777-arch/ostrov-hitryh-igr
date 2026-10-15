@@ -29,7 +29,7 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  const lk=G.look||{x:PX,y:PY};const dir=clamp((lk.x-c.x)/600,-1,1)*(c.flip?-1:1);
   let headA=dir*.05+Math.sin(T*.9+ph)*.02+puz*.15*Math.sin(Math.min(1,(1-puz)*8)*1.57)+(talking?Math.sin((T-talk.t0)*3.3)*.025:0);
  if(c.mood==='laugh'&&T-c.moodT<1.5)headA+=Math.sin(T*28)*.05;
- X.save();X.translate(c.x,c.y);FB.h.push({n:c.n,b:lbox(-w*.33,-h*.95,w*.33,-h*.05)});if(AUD)AUD.h.push({n:c.n,b:tbox(-w*.33,-h*.95,w*.33,-h*.05)});
+ X.save();X.translate(c.x,c.y);FB.h.push({n:c.n,b:lbox(-w*.33,-h*.95,w*.33,-h*.05)});if(AUD)(AUD.hf=AUD.hf||[]).push({n:c.n,b:tbox(-w/2,-h,w/2,0)});if(AUD)AUD.h.push({n:c.n,b:tbox(-w*.33,-h*.95,w*.33,-h*.05)});
  const sh=UA.shadow;if(okI(sh)){X.globalAlpha=.55;X.drawImage(sh,-w*.45,-w*.07,w*.9,w*.14);X.globalAlpha=1}
  X.translate(0,dy);X.rotate(rot);X.scale(sx*(c.flip?-1:1),sy);X.translate(-w/2,-h);
  const rects=[R.head.r,...R.parts.map(p=>p.r)];
