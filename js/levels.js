@@ -25,14 +25,14 @@ const mirrorOf=i=>SPOTS.findIndex(([q,r])=>q===-SPOTS[i][0]&&r===-SPOTS[i][1]);
 const TW=new Map();function tLegal(b){const o=[];for(let i=0;i<19;i++)if(!(b>>i&1))o.push(i);return o}
 function tWin(b){if(TW.has(b))return TW.get(b);const w=tLegal(b).some(i=>!tWin(b|CF[i]));TW.set(b,w);return w}
 // ---------- заставка ----------
-SC.title={enter(){cast=[{n:'tim',x:170,y:705,h:300},{n:'mark',x:1010,y:705,h:270},{n:'mey',x:1150,y:705,h:262}]},
+SC.title={enter(){cast=[{n:'tim',x:170,y:705,h:300},{n:'mark',x:1010,y:705,h:270},{n:'mey',x:1150,y:705,h:270}]},
  draw(){bgDraw('title');motes(45);drawCast();
   {const lg=UA.logo;if(okI(lg)){const w=640,h=w*lg.naturalHeight/lg.naturalWidth;X.save();X.translate(640,165+Math.sin(T*1.5)*5);X.rotate(Math.sin(T*.8)*.012);X.drawImage(lg,-w/2,-h/2,w,h);X.restore()}}
   win('scroll',400,318,480,80);ink('Урок 309 · Игры и выигрышная стратегия',640,358,26);
   for(let i=0;i<5;i++)coinTok(500+i*70,440+Math.sin(T*2+i)*8,24,{rot:Math.sin(T+i)*.2})},
  ui(){btn('play',640,560,300,90,'Играть!',()=>{go('intro')},{pulse:1,fs:46})}};
 // ---------- вступление ----------
-SC.intro={enter(){cast=[{n:'tim',x:200,y:700,h:330},{n:'mark',x:420,y:700,h:290},{n:'mey',x:600,y:700,h:282},{n:'flint',x:1060,y:705,h:400,flip:1}];
+SC.intro={enter(){cast=[{n:'tim',x:200,y:700,h:330},{n:'mark',x:420,y:700,h:290},{n:'mey',x:600,y:700,h:290},{n:'flint',x:1060,y:705,h:400,flip:1}];
  run(async()=>{for(const k of['p1','p2','p3','p4','p5','p6']){if(scene!=='intro')return;if(k==='p5'){swing('flint');mood('flint','laugh')}if(k==='p6')cheer();await say(k)}if(scene==='intro')go('map')})},
  draw(){bgDraw('title',.12);motes(45);drawCast()},
  ui(){btn('skip',1170,50,170,60,'Дальше ›',()=>go('map'),{always:1,fs:28})}};
@@ -223,7 +223,7 @@ SC.secret={enter(n){SEC={n,i:n-1,why:null};cast=[{n:'mey',x:150,y:712,h:250}];ru
 function ansS(i){if(G.busy)return;const s=SECRETS[SEC.i];run(async()=>{if(i!==s.a){SFX.bad();oops('mey');SEC.why=s.why;await say('secw');return}
  SEC.ok=1;SEC.why=s.why;SV.secret[SEC.i]=1;save();SFX.star();burst(640,330,50,'spark',48);cheer();await say('secok');await wait(600);go('l'+SEC.n)})}
 // ---------- финал ----------
-SC.fin={enter(){cast=[{n:'tim',x:240,y:705,h:300},{n:'mark',x:430,y:705,h:270},{n:'mey',x:600,y:705,h:262},{n:'flint',x:1000,y:712,h:380,flip:1}];
+SC.fin={enter(){cast=[{n:'tim',x:240,y:705,h:300},{n:'mark',x:430,y:705,h:270},{n:'mey',x:600,y:705,h:270},{n:'flint',x:1000,y:712,h:380,flip:1}];
  run(async()=>{cheer();await say('fin');await say('l5end')})},
  draw(){bgDraw('l5',.05);motes(45);if(Math.random()<.2)burst(rnd(100,1180),rnd(80,300),8,'spark',48,.6);if(Math.random()<.01)cheer();
   win('scroll',30,20,520,120);ink('Остров покорён!',290,80,54,{col:'#7a3a0a'});const st=SV.stars.reduce((a,b)=>a+b,0);
