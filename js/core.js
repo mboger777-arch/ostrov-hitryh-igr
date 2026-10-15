@@ -68,7 +68,10 @@ let cast=[];
 const NAMES={tim:['Юнга Тим','#ff7a4a'],mark:['Марк','#4a7ad8'],mey:['Мэй','#d84a7a'],flint:['Капитан Флинт','#2a9a3a'],narrator:['','#fff']};
 function cheer(){cast.forEach((c,i)=>{if(c.n!=='flint')c.jump=T+i*.08})}
 function oops(n){const c=cast.find(c=>c.n===n);if(c)c.wob=T}
-function drawCast(){cast.forEach(drawHero)}
+const HERO_K=1.4,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),safe=Math.max(20,Math.min(60,(v.w-1280)/2+20)),big=scene==='intro'||scene==='title'||scene==='fin';
+ c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);if(big){c.x=c.bx;return}
+ const hw=c.h*.3;if(c.bx<640)c.x=Math.max(v.x0+safe+hw,Math.min(c.bx,c.bx-(c.h-c.h0)*.35));else c.x=Math.min(v.x0+v.w-safe-hw,Math.max(c.bx,c.bx+(c.h-c.h0)*.35))}
+function drawCast(){cast.forEach(c=>{heroFit(c);drawHero(c)})}
 // ---- сцены ----
 const SC={};let scene='title',SCN=null;
 function go(n,arg){scene=n;SCN=SC[n];fade=1;talk=null;if(skipTalk)skipTalk();SCN.enter&&SCN.enter(arg)}

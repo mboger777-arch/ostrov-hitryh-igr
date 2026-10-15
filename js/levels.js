@@ -37,17 +37,27 @@ SC.intro={enter(){cast=[{n:'tim',x:200,y:700,h:330},{n:'mark',x:420,y:700,h:290}
  draw(){bgDraw('title',.12);motes(45);drawCast()},
  ui(){btn('skip',1170,50,170,60,'Дальше ›',()=>go('map'),{always:1,fs:28})}};
 // ---------- карта ----------
-const MP=[[270,470],[440,380],[650,470],[860,380],[1070,450]];
-SC.map={enter(){cast=[{n:'tim',x:75,y:715,h:170}];if(!SV.seenMap){SV.seenMap=1;save();run(()=>say('map'))}},
- draw(){bgDraw('title',.25);motes(45);
-  for(let i=1;i<MP.length;i++){const a=MP[i-1],b=MP[i];for(let k=1;k<8;k++){const u=k/8;coinTok(a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u-Math.sin(u*Math.PI)*30,7,{grey:i>=SV.open,a:i<SV.open?.95:.6})}}
-  win('scroll',440,22,400,90);ink('Карта острова',640,67,46);
-  MP.forEach((p,i)=>{const open=i<SV.open;const bob=Math.sin(T*1.6+i)*6;spr(i===4?'chest':'ship',p[0],p[1]+bob,i===4?110:120,{grey:!open,glow:open?1:0});
-   txt(String(i+1),p[0]+44,p[1]-40+bob,40,open?'#ffe9a0':'#bbb',{st:'#3a1a06'});
-   if(!open)spr('xmark',p[0],p[1]+bob,70,{a:.9});win('plank',p[0]-115,p[1]+66,230,52);txt(LNAMES[i],p[0],p[1]+92,21,open?'#fff0c8':'#c8beb0',{st:'#2a1004',lw:4,maxW:180});
-   for(let s=0;s<3;s++)star(p[0]-36+s*36,p[1]+138,14,s<SV.stars[i])});
-  const sc=SV.secret.reduce((a,b)=>a+b,0);win('plank',900,140,330,64);txt('Редкие дублоны: '+sc+' из 4',1065,173,24,'#fff0c8',{st:'#2a1004',lw:4});drawCast()},
- tap(x,y){MP.forEach((p,i)=>{if(Math.hypot(x-p[0],y-p[1])<70){if(i<SV.open){SFX.click();go('l'+(i+1))}else{SFX.bad();oops('tim')}}})}};
+const MPB=[[205,420],[420,372],[640,420],[860,372],[1075,410]];let MP=MPB.map(p=>p.slice()),MK=1;
+function mapLayout(){const v=vis(),safe=Math.max(24,Math.min(70,(v.w-1280)/2+24)),bs=Math.max(v.w/1280,v.h/720)*1.06;
+  MK=clamp(1.25-S*.45,1,1.2);const tc=cast[0],timR=tc?tc.x+tc.h*.3:0,L=Math.max(timR+110*MK,205),cX=640+(.795*1280-640)*bs,lid=360+(.63*720-360)*bs;
+  const sp=Math.min(260,(cX-L)/4);MK=Math.max(.85,Math.min(MK,(sp-18)/196));MP=MPB.map((p,i)=>i===4?[cX,lid-150*MK]:[L+i*sp,(i%2?372:425)+(MK-1)*60]);
+  const pts=[];for(let i=1;i<MP.length;i++){const a=MP[i-1],b=MP[i],mx=(a[0]+b[0])/2,my=Math.max(a[1],b[1])+50*MK;
+  const n=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/(26*MK));for(let k=0;k<=n;k++){const u=k/n,x=(1-u)*(1-u)*a[0]+2*u*(1-u)*mx+u*u*b[0],y=(1-u)*(1-u)*a[1]+2*u*(1-u)*my+u*u*b[1];
+   if(Math.hypot(x-a[0],y-a[1])>66*MK&&Math.hypot(x-b[0],y-b[1])>66*MK)pts.push([x,y,i,k])}}return{v,safe,pts}}
+SC.map={enter(){cast=[{n:'tim',x:70,y:715,h:160}];if(!SV.seenMap){SV.seenMap=1;save();run(()=>say('map'))}},
+ draw(){bgDraw('title',.25);motes(45);const{v,safe,pts}=mapLayout();
+  pts.forEach(([x,y,i,k])=>{const op=i<SV.open,tw=op?Math.sin(T*3-k*.6)*.15:0;coinTok(x,y,6.5*MK,{rot:k*.7,a:op?.95:.75,dark:op?0:.5,sc:1+tw*.3})});
+  win('scroll',505,14,270,66);ink('Карта острова',640,47,34);
+  const sc=SV.secret.reduce((a,b)=>a+b,0),rx=Math.min(1245,v.x0+v.w-safe)-250;win('plank',rx,22,250,46);coinTok(rx+27,45,11,{glow:sc?1:0});txt('Редкие дублоны: '+sc+'/4',rx+137,45,19,'#fff0c8',{st:'#2a1004',lw:4,maxW:190});
+  MP.forEach((p,i)=>{const open=i<SV.open,cur=i===SV.open-1;const bob=open?Math.sin(T*1.6+i)*4:0;X.save();X.translate(p[0],p[1]);X.scale(MK,MK);
+   spr('shadow',0,50,26,{a:.35});
+   spr(i===4?'chest':'ship',0,bob,i===4?96:108,{dark:open?0:.5,glow:open?(cur?1.3+Math.sin(T*4)*.4:.6):0});
+   if(!open)spr('xmark',0,bob,46,{a:.8});
+   coinTok(42,bob-40,17,{dark:open?0:.6});txt(String(i+1),42,bob-40,22,open?'#fff3c0':'#d8cbb0',{st:'#3a1a06',lw:4});
+   win('plank',-98,60,196,44);txt(LNAMES[i],0,82,19,open?'#fff0c8':'#cfc4b0',{st:'#2a1004',lw:4,maxW:164});
+   for(let s=0;s<3;s++)star(-30+s*30,124,11,s<SV.stars[i]);X.restore()});
+  drawCast()},
+ tap(x,y){MP.forEach((p,i)=>{if(Math.abs(x-p[0])<100*MK&&y>p[1]-70*MK&&y<p[1]+140*MK){if(i<SV.open){SFX.click();go('l'+(i+1))}else{SFX.bad();oops('tim')}}})}};
 // ---------- общая рамка уровня ----------
 const SECRET_POS=[[1215,250],[80,250],[1230,300],[70,330]];
 const DEF={};
@@ -97,7 +107,7 @@ function pileAnim(L,cx,cy,sp,per,rowH){return(a,b)=>{const sl=pileSlots(a.n,cx,c
  for(let i=b.n;i<a.n;i++){const[x,y]=sl[i];(L.fly=L.fly||[]).push({x,y,tx:L.turn==='me'?170:1110,ty:520,t0:T+(i-b.n)*.08})}SFX.clang()}}
 function strip(L,k,max,y){// «лестница секретов»: числа 0..max, крестики на проигрышных
  const n=Math.min(max,18),sp=Math.min(62,1100/(n+1));const x0=640-n*sp/2;win('scroll',x0-60,y-46,n*sp+120,92);
- for(let i=0;i<=n;i++){const x=x0+i*sp,p=!subW(k,i);if(p)spr('xmark',x,y,sp*.95,{a:.85});txt(String(i),x,y,i===L.g.n?32:24,i===L.g.n?'#ffe066':p?'#ffd8c0':'#fff3d6',{st:'#3a1a06',lw:5})}}
+ for(let i=0;i<=n;i++){const x=x0+i*sp,p=!subW(k,i);if(p)spr('xmark',x,y,sp*.95,{a:.85});txt(String(i),x,y,i===L.g.n?32:24,i===L.g.n?'#ffe066':p?'#ffd8c0':'#fff3d6',{st:'#3a1a06',lw:5,maxD:sp*.92})}}
 function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:o.opp,x:1160,y:712,h:250,flip:1}];L.moveAnim=pileAnim(L,...o.pile)},
  newGame(L){const r=L.r;const pf=o.pf(r);const pool=pf?o.pP[Math.min(L.lv,2)]:o.pN[Math.min(L.lv,2)];L.g={t:'sub',k:o.k,n:pool[Math.floor(Math.random()*pool.length)]};L.pf=pf;L.fly=[]},
  async start(L){await this.loop(L)},
