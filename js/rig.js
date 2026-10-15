@@ -1,0 +1,45 @@
+'use strict';
+// ===== Живые герои: голова (наклон, кивки, squash-talk по громкости голоса), подвижные части, дыхание, прыжки, эмоции =====
+// r=[x0,y0,x1,y1] доли спрайта, p=точка вращения. Головы-виземы — см. tools/ART_NEEDED.md (пока squash-talk)
+const RIG={
+ tim:{head:{r:[.04,0,.96,.47],p:[.5,.45],jaw:[.5,.40]},parts:[{r:[0,.46,.42,.82],p:[.32,.50],f:(t,c)=>c.fid==='spy'?-Math.sin(clamp(c.fidK,0,1)*Math.PI)*.45:Math.sin(t*1.7)*.03}]},
+ mark:{head:{r:[0,0,1,.47],p:[.5,.45],jaw:[.5,.40]},parts:[]},
+ mey:{head:{r:[0,0,1,.46],p:[.5,.44],jaw:[.5,.39]},parts:[]},
+ flint:{head:{r:[0,0,.80,.52],p:[.42,.52],jaw:[.40,.44]},parts:[{r:[.80,.22,1,.80],p:[.86,.62],f:(t,c)=>c.fid==='saber'?-Math.sin(clamp(c.fidK,0,1)*Math.PI*2)*.35:Math.sin(t*2.1)*.05}]}};
+let AN=null,AMP=0;const _abuf=new Uint8Array(512);
+function attachAnalyser(a){try{const ctx=ac();if(!ctx)return;const s=ctx.createMediaElementSource(a),an=ctx.createAnalyser();an.fftSize=512;s.connect(an);an.connect(ctx.destination);AN=an}catch(e){AN=null}}
+function ampNow(c){if(!(talk&&talk.who===c.n))return 0;if(AN&&!G.fast){AN.getByteTimeDomainData(_abuf);let s=0;for(let i=0;i<_abuf.length;i++){const v=(_abuf[i]-128)/128;s+=v*v}const r=Math.sqrt(s/_abuf.length);AMP=AMP*.5+clamp(r*5,0,1)*.5;return AMP}
+ const t=T-talk.t0;const syl=Math.sin(t*11.5)*.5+.5,word=Math.sin(t*2.1+1)>-.55?1:0;return word*(.15+.85*syl)}
+function clipExcept(w,h,rects){X.beginPath();X.rect(-w*.3,-h*.3,w*1.6,h*1.6);rects.forEach(r=>{X.moveTo(r[0]*w,r[1]*h);X.lineTo(r[0]*w,r[3]*h);X.lineTo(r[2]*w,r[3]*h);X.lineTo(r[2]*w,r[1]*h);X.closePath()});X.clip('evenodd')}
+function drawPart(im,w,h,r,p,ang){X.save();X.translate(p[0]*w,p[1]*h);X.rotate(ang||0);X.translate(-p[0]*w,-p[1]*h);
+ X.beginPath();X.rect(r[0]*w-1,r[1]*h-1,(r[2]-r[0])*w+2,(r[3]-r[1])*h+2);X.clip();X.drawImage(im,0,0,w,h);X.restore()}
+function mood(n,m){const c=cast.find(c=>c.n===n);if(c){c.mood=m;c.moodT=T}}
+function swing(n){const c=cast.find(c=>c.n===n);if(c){c.fid=n==='flint'?'saber':'spy';c.fid0=T}}
+function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x*.013;const talking=talk&&talk.who===c.n;
+ if(!c.fidT)c.fidT=T+rnd(3,7);if(T>c.fidT&&!c.fid){c.fid={tim:'spy',mark:'hop',mey:'sway',flint:Math.random()<.5?'saber':'flap'}[c.n];c.fid0=T}
+ if(c.fid){c.fidK=(T-c.fid0)/1.2;if(c.fidK>=1){c.fid=null;c.fidT=T+rnd(4,8)}}
+ let sy=1+Math.sin(T*2.2+ph)*.022,sx=1-Math.sin(T*2.2+ph)*.012,dy=0,rot=Math.sin(T*1.3+ph)*.012;
+ if(c.fid==='hop'){const k=c.fidK;dy-=Math.abs(Math.sin(k*Math.PI*2))*14}
+ if(c.fid==='sway')rot+=Math.sin(c.fidK*Math.PI*2)*.05;
+ if(c.fid==='flap'){sy+=Math.sin(c.fidK*Math.PI*6)*.02*(1-c.fidK);dy-=Math.sin(c.fidK*Math.PI)*10}
+ if(c.jump&&T>c.jump&&T-c.jump<.75){const u=(T-c.jump)/.75;if(u<.15){sy-=.12*(u/.15);sx+=.08*(u/.15)}else if(u<.85){const k=(u-.15)/.7;dy-=Math.sin(k*Math.PI)*70;sy+=.08*Math.sin(k*Math.PI);sx-=.05*Math.sin(k*Math.PI)}else{const k=(u-.85)/.15;sy-=.1*(1-k);sx+=.07*(1-k)}}
+ const puz=c.wob&&T-c.wob<1.6?1-(T-c.wob)/1.6:0;
+ const hit=c.hit&&T-c.hit<1?1-(T-c.hit):0;if(hit){sy-=.12*hit*Math.abs(Math.sin((T-c.hit)*14));sx+=.06*hit;rot+=Math.sin((T-c.hit)*16)*.07*hit}
+ const h=c.h,w=h*im.width/im.height;
+ const lk=G.look||{x:PX,y:PY};const dir=clamp((lk.x-c.x)/600,-1,1)*(c.flip?-1:1);
+ const amp=talking?ampNow(c):0;if(!c.am)c.am=0;c.am=c.am*.55+amp*.45;
+ let headA=dir*.05+Math.sin(T*.9+ph)*.02+puz*.15*Math.sin(Math.min(1,(1-puz)*8)*1.57)+(talking?Math.sin((T-talk.t0)*3.3)*.035:0);
+ if(c.mood==='laugh'&&T-c.moodT<1.5)headA+=Math.sin(T*28)*.05;
+ X.save();X.translate(c.x,c.y);
+ const sh=UA.shadow;if(okI(sh)){X.globalAlpha=.55;X.drawImage(sh,-w*.45,-w*.07,w*.9,w*.14);X.globalAlpha=1}
+ X.translate(0,dy);X.rotate(rot);X.scale(sx*(c.flip?-1:1),sy);X.translate(-w/2,-h);
+ const rects=[R.head.r,...R.parts.map(p=>p.r)];
+ X.save();clipExcept(w,h,rects);X.drawImage(im,0,0,w,h);X.restore();
+ R.parts.forEach(p=>drawPart(im,w,h,p.r,p.p,p.f?p.f(T+ph,c):0));
+ X.save();const hp=R.head.p;X.translate(hp[0]*w,hp[1]*h);X.rotate(headA);
+ // squash-talk: голова чуть вытягивается и кивает в такт громкости голоса
+ const nod=c.am*.045;X.scale(1-nod*.35,1+nod);X.translate(0,-c.am*h*.006);X.translate(-hp[0]*w,-hp[1]*h);
+ X.beginPath();const hr=R.head.r;X.rect(hr[0]*w-1,hr[1]*h-1,(hr[2]-hr[0])*w+2,(hr[3]-hr[1])*h+2);X.clip();X.drawImage(im,0,0,w,h);
+ X.restore();X.restore();
+ if(puz>0&&c.n!=='flint'){const hx2=c.x,hy=c.y-h*1.02+dy;txt('?',hx2+Math.sin(T*6)*4,hy-10*Math.sin(puz*3),44*Math.min(1,puz*3),'#ffe066')}
+ if(c.mood==='laugh'&&T-c.moodT<1.5)txt(c.n==='flint'?'Кар-р!':'Ха-ха!',c.x,c.y-h*1.05,40,'#ffe9a0')}
