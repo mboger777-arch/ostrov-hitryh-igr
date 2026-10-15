@@ -2,7 +2,7 @@
 // ===== Рисованная графика: всё из нарисованных спрайтов (окна 9-slice, кнопки-доски и компас, дублоны, ядра, тарелки, частицы) =====
 const UA={};function ua(n){const i=new Image();i.src='assets/ui/'+n+'.png';UA[n]=i;return i}
 ['coin','chest','ball','balls','plate','ship','xmark','plank','compass','frame','scroll','bubble','logo','star','shadow','cell','tabletop'].forEach(ua);
-['tim','mark','mey'].forEach(w=>{for(let i=0;i<6;i++)ua('v_'+w+i)});
+['tim','mark','mey','flint'].forEach(w=>{for(let i=0;i<6;i++)ua('v_'+w+i)});
 const SPL=[];for(let i=0;i<7;i++)SPL.push(ua('p_splash'+i));
 const okI=i=>i&&i.complete&&i.naturalWidth>0;
 const GREY={};function grey(n){if(GREY[n])return GREY[n];const i=UA[n];if(!okI(i))return null;const c=document.createElement('canvas');c.width=i.naturalWidth;c.height=i.naturalHeight;const g=c.getContext('2d');g.drawImage(i,0,0);

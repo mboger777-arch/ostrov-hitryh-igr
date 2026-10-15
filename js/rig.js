@@ -43,11 +43,11 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  X.restore();X.restore();
  if(puz>0&&c.n!=='flint'){const hx2=c.x,hy=c.y-h*1.02+dy;txt('?',hx2+Math.sin(T*6)*4,hy-10*Math.sin(puz*3),44*Math.min(1,puz*3),'#ffe066')}
  if(c.mood==='laugh'&&T-c.moodT<1.5)txt(c.n==='flint'?'Кар-р!':'Ха-ха!',c.x,c.y-h*1.05,40,'#ffe9a0')}
-const HF={"tim": [0.53, 0.235, 1.22, 0], "mark": [0.52, 0.34, 0.8, 0.215], "mey": [0.52, 0.36, 0.8, 0.22]};
+const HF={"tim": [0.53, 0.235, 1.22, 0], "mark": [0.52, 0.34, 0.8, 0.215], "mey": [0.52, 0.36, 0.8, 0.22], "flint": [0.43, 0.27, 1.12, 0]};
 // 0 закрыт · 1 приоткрыт · 2 широко · 3 «О» · 4 улыбка · 5 моргание — по громкости голоса
 function visFor(c){if(c.forceV!=null)return c.forceV;const talking=talk&&talk.who===c.n;
  if(talking){if(!c.vs)c.vs={f:0,t:0,env:0};const v=c.vs;const a=ampNow(c);v.env=v.env*.6+a*.4;
   const tgt=v.env<.1?0:v.env<.28?1:v.env<.55?(Math.floor(T*4.3+c.x)%3===0?3:1):2;if(T-v.t>.085&&tgt!==v.f){v.f=tgt;v.t=T}return v.f}
- if(c.wob&&T-c.wob<1.2)return 3;if(c.jump&&T-c.jump<1.2)return 4;if(c.mood==='happy'&&T-c.moodT<2)return 4;if(c.mood==='laugh'&&T-c.moodT<1.6)return 4;return 0}
+ if(c.wob&&T-c.wob<1.2)return 3;if(c.jump&&T-c.jump<1.2)return 4;if(c.mood==='happy'&&T-c.moodT<2)return 4;if(c.mood==='laugh'&&T-c.moodT<1.6)return 4;if(c.n==='flint'&&c.hit&&T-c.hit<1)return 3;return 0}
 function blinkOn(c){if(c.forceV!=null)return false;if(!c.blN){c.blN=T+rnd(1,4);c.bl2=0}if(T>c.blN+.12){if(!c.bl2&&Math.random()<.25){c.bl2=1;c.blN=T+.12}else{c.bl2=0;c.blN=T+rnd(2.5,5)}}return T>=c.blN&&T<c.blN+.12}
 G.vis=n=>{const c=cast.find(c=>c.n===n);return c?visFor(c):-1};
