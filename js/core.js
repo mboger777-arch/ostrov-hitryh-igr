@@ -50,11 +50,14 @@ function stepParticles(){for(let i=PS.length-1;i>=0;i--){const p=PS[i];p.life-=p
  if(p.kind==='shard'||p.kind==='drop')p.vy+=900*DT;else if(p.kind==='spark'){p.vx*=.96;p.vy*=.96}else if(p.kind==='mote')p.vx+=Math.sin(T+p.rot)*4*DT;p.x+=p.vx*DT;p.y+=p.vy*DT;p.rot+=p.vr*DT}}
 // ---- фон с параллаксом ----
 function vis(){return{x0:-OX/S,y0:-OY/S,w:W/S,h:H/S}}
-function bgDraw(n,dim,scroll){const v=vis(),k=Math.max(v.w/1280,v.h/720);const mx=(PX-640)/640,my=(PY-360)/360;scroll=scroll||0;
- const b=IM['bg_'+n],f=IM['fg_'+n];
- if(b&&b.complete){const s=k*1.06,ox=-mx*10+Math.sin(T*.21)*4,oy=-my*6+Math.cos(T*.17)*3;X.drawImage(b,640-640*s+ox,360-360*s+oy,1280*s,720*s)}
+// фон: картина целиком (contain), поля — та же картина, размытая и притемнённая (cover)
+const BLUR={};function blurOf(b,n){if(BLUR[n])return BLUR[n];const c=document.createElement('canvas');c.width=320;c.height=180;const x=c.getContext('2d');x.filter='blur(5px) brightness(.62) saturate(.9)';x.drawImage(b,-12,-7,344,194);BLUR[n]=c;return c}
+function bgDraw(n,dim,scroll){const v=vis(),k=Math.max(v.w/1280,v.h/720);const mx=(PX-640)/640,my=(PY-360)/360;
+ const b=IM['bg_'+n];
+ if(b&&b.complete&&b.naturalWidth){const marg=v.w>1281||v.h>721;if(marg){const s=k*1.04;X.drawImage(blurOf(b,n),640-640*s,360-360*s,1280*s,720*s);
+   X.save();X.shadowColor='rgba(0,0,0,.55)';X.shadowBlur=40;X.fillStyle='#000';X.fillRect(2,2,1276,716);X.restore()}
+  const s=1.012,ox=(-mx*3+Math.sin(T*.21)*2),oy=(-my*2+Math.cos(T*.17)*1.5);X.drawImage(b,640-640*s+ox,360-360*s+oy,1280*s,720*s)}
  if(dim){X.fillStyle=`rgba(8,4,24,${dim})`;X.fillRect(v.x0,v.y0,v.w,v.h)}
- // виньетка
  const g=X.createRadialGradient(640,360,300,640,360,900);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(20,8,0,.45)');X.fillStyle=g;X.fillRect(v.x0,v.y0,v.w,v.h)}
 // ---- рисование ----
 function wrap(t,maxW){const ws=t.split(' '),out=[];let cur='';for(const w of ws){const s=cur?cur+' '+w:w;if(X.measureText(s).width>maxW&&cur){out.push(cur);cur=w}else cur=s}if(cur)out.push(cur);return out}
@@ -68,9 +71,9 @@ let cast=[];
 const NAMES={tim:['Юнга Тим','#ff7a4a'],mark:['Марк','#4a7ad8'],mey:['Мэй','#d84a7a'],flint:['Капитан Флинт','#2a9a3a'],narrator:['','#fff']};
 function cheer(){cast.forEach((c,i)=>{if(c.n!=='flint')c.jump=T+i*.08})}
 function oops(n){const c=cast.find(c=>c.n===n);if(c)c.wob=T}
-const HERO_K=1.4,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),safe=Math.max(20,Math.min(60,(v.w-1280)/2+20)),big=scene==='intro'||scene==='title'||scene==='fin';
+const HERO_K=1.3,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),safe=Math.max(20,Math.min(60,(v.w-1280)/2+20)),big=scene==='intro'||scene==='title'||scene==='fin';
  c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);if(big){c.x=c.bx;return}
- const hw=c.h*.3;if(c.bx<640)c.x=Math.max(v.x0+safe+hw,Math.min(c.bx,c.bx-(c.h-c.h0)*.35));else c.x=Math.min(v.x0+v.w-safe-hw,Math.max(c.bx,c.bx+(c.h-c.h0)*.35))}
+ const hw=c.h*.3,lo=Math.max(v.x0+safe,0)+hw*.8,hi=Math.min(v.x0+v.w-safe,1280)-hw*.8;if(c.bx<640)c.x=Math.max(lo,Math.min(c.bx,c.bx-(c.h-c.h0)*.35));else c.x=Math.min(hi,Math.max(c.bx,c.bx+(c.h-c.h0)*.35))}
 function drawCast(){cast.forEach(c=>{heroFit(c);drawHero(c)})}
 // ---- сцены ----
 const SC={};let scene='title',SCN=null;
@@ -85,9 +88,9 @@ const TOUCH=(('ontouchstart' in window)||navigator.maxTouchPoints>0)&&matchMedia
 function loop(now){DT=PORTRAIT()?0:clamp((now-last)/1000,0,.05);last=now;T+=DT;fpsA=fpsA*.95+(1/Math.max(DT,.001))*.05;
  X.setTransform(DPR,0,0,DPR,0,0);X.clearRect(0,0,W,H);
  const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;shake*=Math.pow(.004,DT);if(shake<.3)shake=0;
- X.setTransform(DPR*S,0,0,DPR*S,DPR*(OX+sx),DPR*(OY+sy));UI=[];stepParticles();
+ X.setTransform(DPR*S,0,0,DPR*S,DPR*(OX+sx),DPR*(OY+sy));UI=[];frameBoxes();if(G.auditReq){G.auditReq=0;AUD={t:[],c:[],h:[]};G._aud=AUD}else AUD=null;stepParticles();
  try{SCN&&SCN.draw()}catch(e){console.error(e)}
- drawParticles();drawTalk();if(SCN&&SCN.ui)SCN.ui();
+ drawParticles();if(SCN&&SCN.ui)SCN.ui();drawTalk();
  if(fade>0){const v=vis();X.fillStyle=`rgba(8,4,20,${fade})`;X.fillRect(v.x0,v.y0,v.w,v.h);fade=Math.max(0,fade-DT*2.5)}
  if(PORTRAIT())drawRotate();
  requestAnimationFrame(loop)}
