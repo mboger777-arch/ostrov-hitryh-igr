@@ -27,7 +27,7 @@ const CAPH={};function capHalf(size){if(CAPH[size]==null){X.font=size+'px '+FONT
 function txt(t,x,y,size,col,o){o=o||{};t=String(t);if(o.maxW){X.font=size+'px '+FONT;const mw=X.measureText(t).width;if(mw>o.maxW)size=Math.floor(size*o.maxW/mw)}const ch=capHalf(size);X.font=size+'px '+FONT;X.textAlign=o.al||'center';X.textBaseline='alphabetic';y+=ch;X.lineJoin='round';
  const c=hx(col||'#fff');X.save();
  if(o.st!==0){X.shadowColor='rgba(0,0,0,.5)';X.shadowBlur=size*.16;X.shadowOffsetY=size*.06;X.lineWidth=o.lw||Math.max(3,size*.17);X.strokeStyle=o.st||'#3a1a06';X.strokeText(t,x,y);X.shadowColor='transparent'}
- if(c){const g=X.createLinearGradient(0,y-size*.5,0,y+size*.45);g.addColorStop(0,mix(c,[255,255,255],.6));g.addColorStop(.5,mix(c,[255,255,255],.08));g.addColorStop(1,mix(c,[40,20,0],.25));X.fillStyle=g}else X.fillStyle=col;
+ if(c){const g=X.createLinearGradient(0,y-ch-size*.5,0,y-ch+size*.45);g.addColorStop(0,mix(c,[255,255,255],.6));g.addColorStop(.5,mix(c,[255,255,255],.08));g.addColorStop(1,mix(c,[40,20,0],.25));X.fillStyle=g}else X.fillStyle=col;
  X.fillText(t,x,y);X.restore()}
 const INK='#4a2208',INKST='rgba(255,240,205,.85)';
 function ink(t,x,y,s,o){o=o||{};txt(t,x,y,s,o.col||'#5a2a0a',{st:o.st||INKST,lw:o.lw||Math.max(3,s*.14),al:o.al})}
@@ -62,6 +62,6 @@ function drawTalk(){if(!talk)return;const c=cast.find(c=>c.n===talk.who);const f
  X.save();const ox=flip?bx+bw*.85:bx+bw*.15;X.translate(ox,by+bh);X.scale(pop,pop);X.translate(-ox,-by-bh);
  win('bubble',bx,by,bw,bh,flip);const cx=bx+bw/2;let y0=by+bodyH/2-textH/2;
  if(c){txt(NAMES[c.n][0],cx,y0+12,24,NAMES[c.n][1],{st:'#fff4dc',lw:5});y0+=32}
- L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#3a1a06',{st:'rgba(255,248,230,.9)',lw:5}));X.restore();
+ L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#2a1004',{st:'rgba(255,244,220,.7)',lw:3}));X.restore();
  talk.box=[bx,by,bw,bh]}
 go('title');requestAnimationFrame(loop);
