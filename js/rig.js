@@ -4,7 +4,7 @@
 const RIG={
  tim:{head:{r:[.04,0,.96,.47],p:[.5,.45],jaw:[.5,.40]},parts:[{r:[0,.46,.42,.82],p:[.32,.50],f:(t,c)=>c.fid==='spy'?-Math.sin(clamp(c.fidK,0,1)*Math.PI)*.45:Math.sin(t*1.7)*.03}]},
  mark:{head:{r:[0,0,1,.47],p:[.5,.45],jaw:[.5,.40]},parts:[]},
- mey:{head:{r:[0,0,1,.315],p:[.5,.30],jaw:[.5,.27]},parts:[]},
+ mey:{head:{r:[0,0,1,.42],p:[.5,.40],jaw:[.5,.36]},parts:[]},
  flint:{head:{r:[0,0,.80,.52],p:[.42,.52],jaw:[.40,.44]},parts:[{r:[.80,.22,1,.80],p:[.86,.62],f:(t,c)=>c.fid==='saber'?-Math.sin(clamp(c.fidK,0,1)*Math.PI*2)*.35:Math.sin(t*2.1)*.05}]}};
 let AN=null,AMP=0;const _abuf=new Uint8Array(512);
 function attachAnalyser(a){try{const ctx=ac();if(!ctx)return;const s=ctx.createMediaElementSource(a),an=ctx.createAnalyser();an.fftSize=512;s.connect(an);an.connect(ctx.destination);AN=an}catch(e){AN=null}}
