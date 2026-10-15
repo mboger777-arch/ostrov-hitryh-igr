@@ -68,7 +68,7 @@ function levelScene(n){SC['l'+n]={enter(){if(LV&&LV.n===n&&LV.resume){LV.resume=
   if(LV.banner){const b=LV.banner;X.font='26px '+FONT;const L=wrap(b.t,640),w=Math.max(...L.map(l=>X.measureText(l).width))+120,h=L.length*33+78,y=Math.min(b.y||100,712-h);
    X.globalAlpha=ease((T-b.t0)*4);win(b.bad?'frame':'scroll',640-w/2,y,w,h);L.forEach((l,i)=>ink(l,640,y+h/2-(L.length-1)*16.5+i*33,26,{col:b.bad?'#8a1a08':'#4a2208'}));X.globalAlpha=1}},
  ui(){win('scroll',450,0,380,64);ink(LNAMES[n-1],640,32,28);for(let i=0;i<ROUNDS[n-1];i++)coinTok(640-(ROUNDS[n-1]-1)*17+i*34,82,12,{grey:i>=LV.r});
-  btn('home',62,48,84,64,'⌂',()=>{go('map')},{always:1});if(!LV.done)btn('hint',1218,48,76,64,'?',()=>{if(!G.busy)run(()=>DEF[n].hint(LV))},{fs:36});
+  btn('home',74,66,84,64,'⌂',()=>{go('map')},{always:1});if(!LV.done)btn('hint',1214,58,76,64,'?',()=>{if(!G.busy)run(()=>DEF[n].hint(LV))},{fs:36});
   if(DEF[n].ui&&!LV.done)DEF[n].ui(LV);if(LV.done)endPanel(n)},
  tap(x,y){if(LV.done)return;if(n<5&&!SV.secret[n-1]&&!G.busy){const[sx,sy]=SECRET_POS[n-1];if(Math.hypot(x-sx,y-sy)<40){LV.resume=true;go('secret',n);return}}if(DEF[n].tap)DEF[n].tap(LV,x,y)}}}
 function banner(t,bad,y){LV.banner={t,bad,t0:T,y}}
@@ -178,7 +178,7 @@ DEF[4]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'mey',x:1170,y:712,h:250,
    if(res){SFX.star();cheer();mood('mey','laugh');await say('l4win');if(!L.shownMap){L.shownMap=1;L.reveal=true;await say('l4map');await wait(1500)}L.lv++;if(await roundDone())return}
    else{SFX.bad();await say('l4lose');L.reveal=true;await say(rule==='king'?'l4h':'l4rh')}}},
  async hint(L){L.reveal=true;await say(L.g&&L.g.rule==='rook'?'l4rh':'l4h')},
- draw(L){drawGrid(L);if(L.turn||L.choose||L.myTurn)win('plank',125,4,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Мэй',250,35,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'});
+ draw(L){drawGrid(L);if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Мэй',275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'});
   if(L.g){win('scroll',930,150,330,110);para(L.g.rule==='king'?'На 1 клетку влево, вниз или наискосок':'Влево или вниз на сколько угодно',1095,205,250,22)}},
  tap(L,x,y){gridTap(L,x,y)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn}}};levelScene(4);
@@ -202,7 +202,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
   else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-50,BOSS_GB.y-GH*BOSS_GB.c/2-46,GW*BOSS_GB.c+100,GH*BOSS_GB.c+92);drawGrid(L,BOSS_GB)}
   win('scroll',930,150,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,205,250,22);
   if(L.turn||L.choose)win('plank',30,150,250,70);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',155,185,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
-  win('scroll',125,4,250,62);for(let i=0;i<3;i++)spr('chest',185+i*65,35,40,{grey:i>=L.hp})},
+  win('scroll',150,6,250,62);for(let i=0;i<3;i++)spr('chest',210+i*65,37,40,{grey:i>=L.hp})},
  ui(L){if(L.choose){btn('first',470,650,280,74,'Хожу первым',()=>give(L,true),{fs:30});btn('second',810,650,280,74,'Ходи, Флинт',()=>give(L,false),{fs:30})}
   else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  tap(L,x,y){if(L.g&&L.g.t==='grid')gridTap(L,x,y,BOSS_GB)},

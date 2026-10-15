@@ -13,6 +13,7 @@ function spr(n,x,y,h,o){o=o||{};const i=UA[n];if(!okI(i))return 0;const w=h*i.na
 function nine(n,x,y,w,h,l,t,r,b,flip,cap){if(X.globalAlpha>=.05){FB.c.push({n:NTAG||n,b:lbox(x,y,x+w,y+h)});if(AUD)AUD.c.push({n:NTAG||n,b:tbox(x,y,x+w,y+h)})}const i=UA[n];if(!okI(i))return;const iw=i.naturalWidth,ih=i.naturalHeight;const k=Math.min(w/iw,h/ih,cap||1.6);
  const sx=[0,l*iw,iw-r*iw,iw],sy=[0,t*ih,ih-b*ih,ih],dx=[0,l*iw*k,w-r*iw*k,w],dy=[0,t*ih*k,h-b*ih*k,h];
  X.save();X.translate(x,y);if(flip){X.translate(w,0);X.scale(-1,1)}
+ if(n==='bubble'){X.drawImage(i,0,0,w,h);X.restore();return}// облачко: целиком, без нарезки — бугорки не размазываются
  for(let a=0;a<3;a++)for(let c=0;c<3;c++){const sw=sx[c+1]-sx[c],sh=sy[a+1]-sy[a],ddw=dx[c+1]-dx[c],ddh=dy[a+1]-dy[a];if(sw>0&&sh>0&&ddw>0&&ddh>0)X.drawImage(i,sx[c],sy[a],sw,sh,dx[c]-.5,dy[a]-.5,ddw+1,ddh+1)}
  X.restore()}
 const SL={frame:[.2,.26,.2,.26,1.3],scroll:[.2,.2,.2,.2,1.2],bubble:[.3,.3,.3,.42,1.1],plank:[.3,.3,.3,.3,1]};
@@ -54,7 +55,7 @@ function btn(id,x,y,w,h,label,fn,o){o=o||{};UI.push({id,x,y,w,h,fn,always:o.alwa
  X.save();X.translate(x,y);const sc=pr*(hov?1.06:1);X.scale(sc,sc);if(o.dis)X.globalAlpha*=.55;
  const round=w<=h*1.45;
  if(round){const d=Math.max(w,h)*1.25;
-  if(label==='⌂'){const c=UA.compass;if(okI(c)){const ww=d*1.25,hh=ww*c.naturalHeight/c.naturalWidth;X.rotate(Math.sin(T*1.2)*.04);dimg('compass',-ww/2,-hh/2,ww,hh)}}
+  if(label==='⌂'){const c=UA.compass;if(okI(c)){const ww=d*1.25,hh=ww*c.naturalHeight/c.naturalWidth;FB.c.push({n:'compass',b:lbox(-ww/2,-hh/2,ww/2,hh/2)});if(AUD)AUD.c.push({n:'compass',b:tbox(-ww/2,-hh/2,ww/2,hh/2)});X.rotate(Math.sin(T*1.2)*.04);dimg('compass',-ww/2,-hh/2,ww,hh)}}
   else{FB.c.push({n:'coinbtn',b:lbox(-d/2,-d/2,d/2,d/2)});if(AUD)AUD.c.push({n:'coinbtn',b:tbox(-d/2,-d/2,d/2,d/2)});dimg('coin',-d/2,-d/2,d,d*UA.coin.naturalHeight/Math.max(1,UA.coin.naturalWidth),{grey:o.dis});X.save();X.globalAlpha*=.5;dimg('coin',-d*.33,-d*.33,d*.66,d*.66);X.restore();txt(label,0,0,o.fs||d*.5,'#fff3c0',{st:'#4a2600',lw:(o.fs||d*.5)*.2})}}
  else{const hh=h*1.3,ww=w*1.15;win('plank',-ww/2,-hh/2,ww,hh);const fs=o.fs||Math.min(h*.5,34);txt(label,0,0,fs,'#fff0c8',{st:'#2a1004',lw:fs*.18,maxW:ww*.74})}
  X.restore()}
@@ -69,9 +70,9 @@ function drawParticles(){for(const p of PS){X.save();X.globalAlpha=Math.min(1,p.
  X.restore()}}
 // ---- облачко речи: пергаментный пузырь ----
 function ovl(a,b){return Math.max(0,Math.min(a[2],b[2])-Math.max(a[0],b[0]))*Math.max(0,Math.min(a[3],b[3])-Math.max(a[1],b[1]))}
-function bubbleCost(r,c){let o=0;for(const q of FBP.c)if(q.n!=='bubble')o+=ovl(r,q.b);for(const q of FBP.t)if(!q.bub)o+=ovl(r,q.b)*2;for(const q of FBP.h)o+=ovl(r,q.b);return o}
+function bubbleCost(r0,c){const r=[r0[0]-5,r0[1]-5,r0[2]+5,r0[3]+5];let o=0;for(const q of FBP.c)if(q.n!=='bubble')o+=ovl(r,q.b);for(const q of FBP.t)if(!q.bub)o+=ovl(r,q.b)*2;for(const q of FBP.h)o+=ovl(r,q.b);return o}
 function placeBubble(c,bw,bh){const v=vis();
- const hx=c?c.x:640,hy=c?c.y-c.h*.97:0;let best=null;const x0=v.x0+6,x1=v.x0+v.w-bw-6,y0=Math.max(v.y0+6,0),y1=v.y0+v.h-bh-6;
+ const hx=c?c.x:640,hy=c?c.y-c.h*.97:0;let best=null;const sl=v.x0+(typeof SAFE!=='undefined'?SAFE.l/S:0),sr=v.x0+v.w-(typeof SAFE!=='undefined'?SAFE.r/S:0),st=v.y0+(typeof SAFE!=='undefined'?SAFE.t/S:0),sb=v.y0+v.h-(typeof SAFE!=='undefined'?SAFE.b/S:0);const x0=sl+6,x1=sr-bw-6,y0=st+6,y1=sb-bh-6;
  for(let by=y0;by<=y1+.1;by+=Math.max(8,(y1-y0)/36))for(let bx=x0;bx<=x1+.1;bx+=Math.max(8,(x1-x0)/60)){const r=[bx,by,bx+bw,by+bh];const o=bubbleCost(r,c);
   const fl=c?hx>bx+bw/2:false,tx=fl?bx+bw*.85:bx+bw*.15,ty=by+bh;const d=c?Math.hypot(tx-hx,ty-hy):Math.abs(bx+bw/2-640)+by;const sc=o*40+d;if(!best||sc<best[4])best=[bx,by,fl,o,sc]}
  if(!best)best=[640-bw/2,8,false,1e9,0];return best}
