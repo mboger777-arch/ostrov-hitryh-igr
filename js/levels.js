@@ -38,9 +38,14 @@ SC.intro={enter(){cast=[{n:'tim',x:200,y:700,h:330},{n:'mark',x:420,y:700,h:290}
  ui(){btn('skip',1170,50,170,60,'Дальше ›',()=>go('map'),{always:1,fs:28})}};
 // ---------- карта ----------
 const MPB=[[205,420],[420,372],[640,420],[860,372],[1075,410]];let MP=MPB.map(p=>p.slice()),MK=1;
-function mapLayout(){const v=vis(),safe=Math.max(24,Math.min(70,(v.w-1280)/2+24)),bs=1.012;
-  MK=clamp(1.25-S*.45,1,1.2);const tc=cast[0],timR=tc?tc.x+tc.h*.3:0,L=Math.max(timR+110*MK,205),cX=640+(.795*1280-640)*bs,lid=360+(.63*720-360)*bs;
-  const sp=Math.min(260,(cX-L)/4);MK=Math.max(.85,Math.min(MK,(sp-18)/196));MP=MPB.map((p,i)=>i===4?[cX,lid-150*MK]:[L+i*sp,(i%2?372:425)+(MK-1)*60]);
+function mapLayout(){const v=vis(),bs=bgScale(),si=typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0,safe=Math.max(si+12,20);
+  const[cX,lid]=bgXY(.795*1280,.63*720);MK=clamp(1.25-S*.45,.85,1.15);
+  const tc=cast[0],timR=tc?tc.x+(IM[tc.n]&&IM[tc.n].naturalWidth?tc.h*IM[tc.n].naturalWidth/IM[tc.n].naturalHeight:tc.h*.6)*.5:v.x0+safe+80;const L=Math.max(timR+90*MK,bgXY(.12*1280,.55*720)[0]);
+  const R=Math.min(cX-40,bgXY(.92*1280,.55*720)[0]);const sp=Math.min(260,Math.max(140,(R-L)/4));
+  MK=Math.max(.75,Math.min(MK,(sp-14)/196));
+  MP=MPB.map((p,i)=>i===4?[cX,lid-150*MK]:[L+i*sp,(i%2?372:425)+(MK-1)*40]);
+  // держим остановки в видимой зоне
+  MP.forEach(p=>{p[0]=clamp(p[0],v.x0+safe+80,v.x0+v.w-safe-80);p[1]=clamp(p[1],v.y0+90,v.y0+v.h-160)});
   const pts=[];for(let i=1;i<MP.length;i++){const a=MP[i-1],b=MP[i],mx=(a[0]+b[0])/2,my=Math.max(a[1],b[1])+50*MK;
   const n=Math.round(Math.hypot(b[0]-a[0],b[1]-a[1])/(26*MK));for(let k=0;k<=n;k++){const u=k/n,x=(1-u)*(1-u)*a[0]+2*u*(1-u)*mx+u*u*b[0],y=(1-u)*(1-u)*a[1]+2*u*(1-u)*my+u*u*b[1];
    if(Math.hypot(x-a[0],y-a[1])>66*MK&&Math.hypot(x-b[0],y-b[1])>66*MK)pts.push([x,y,i,k])}}return{v,safe,pts}}
@@ -122,7 +127,7 @@ function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:
  draw(L){if(!L.g)return;drawPile(L,...o.draw);win('plank',1010,150,250,70);txt((o.k===2?'Монет: ':'Ядер: ')+L.g.n,1135,186,30,'#fff0c8',{st:'#2a1004'});
   if(L.reveal)strip(L,o.k,Math.max(L.g.n,o.k===2?12:16),o.stripY);
   if(L.q){win('frame',300,150,680,330);para(LINES[o.quiz.k].t,640,230,560,28)}
-  if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),155,185,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
+  if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
  ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>give(L,i),{fs:28}));return}
   if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,q:L.q?L.q.a:null}}};levelScene(n)}
@@ -201,7 +206,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
  draw(L){if(!L.g)return;if(L.g.t==='sub'){drawPile(L,L.g.k===2?'coin':'ball',L.g.k===2?58:64,640,560,66,9,54);win('plank',515,100,250,62);txt((L.g.k===2?'Монет: ':'Ядер: ')+L.g.n,640,132,28,'#fff0c8',{st:'#2a1004'});if(L.reveal)strip(L,L.g.k,Math.max(L.g.n,12),330,560)}
   else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-50,BOSS_GB.y-GH*BOSS_GB.c/2-46,GW*BOSS_GB.c+100,GH*BOSS_GB.c+92);drawGrid(L,BOSS_GB)}
   win('scroll',930,150,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,205,250,22);
-  if(L.turn||L.choose)win('plank',30,150,250,70);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',155,185,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
+  if(L.turn||L.choose)win('plank',150,6,250,62);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',275,37,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
   win('scroll',150,6,250,62);for(let i=0;i<3;i++)spr('chest',210+i*65,37,40,{grey:i>=L.hp})},
  ui(L){if(L.choose){btn('first',470,650,280,74,'Хожу первым',()=>give(L,true),{fs:30});btn('second',810,650,280,74,'Ходи, Флинт',()=>give(L,false),{fs:30})}
   else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},

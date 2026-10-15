@@ -65,15 +65,14 @@ function stepParticles(){for(let i=PS.length-1;i>=0;i--){const p=PS[i];p.life-=p
  if(p.kind==='shard'||p.kind==='drop')p.vy+=900*DT;else if(p.kind==='spark'){p.vx*=.96;p.vy*=.96}else if(p.kind==='mote')p.vx+=Math.sin(T+p.rot)*4*DT;p.x+=p.vx*DT;p.y+=p.vy*DT;p.rot+=p.vr*DT}}
 // ---- фон с параллаксом ----
 function vis(){return{x0:-OX/S,y0:-OY/S,w:W/S,h:H/S}}
-// фон: картина целиком (contain), поля — та же картина, размытая и притемнённая (cover)
-const BLUR={};function blurOf(b,n){if(BLUR[n])return BLUR[n];const c=document.createElement('canvas');c.width=320;c.height=180;const x=c.getContext('2d');x.filter='blur(5px) brightness(.62) saturate(.9)';x.drawImage(b,-12,-7,344,194);BLUR[n]=c;return c}
-function bgDraw(n,dim,scroll){const v=vis(),k=Math.max(v.w/1280,v.h/720);const mx=(PX-640)/640,my=(PY-360)/360;
+// фон: картинка заполняет весь видимый экран (cover), без размытых полей
+function bgScale(){const v=vis();return Math.max(v.w/1280,v.h/720)}
+function bgXY(px,py){const s=bgScale(),ox=Math.sin(T*.21)*2,oy=Math.cos(T*.17)*1.5;return[640*(1-s)+px*s+ox,360*(1-s)+py*s+oy]}
+function bgDraw(n,dim,scroll){const v=vis(),s=bgScale(),mx=(PX-640)/640,my=(PY-360)/360;
  const b=IM['bg_'+n];
- if(b&&b.complete&&b.naturalWidth){const marg=v.w>1281||v.h>721;if(marg){const s=k*1.04;X.drawImage(blurOf(b,n),640-640*s,360-360*s,1280*s,720*s);
-   X.save();X.shadowColor='rgba(0,0,0,.55)';X.shadowBlur=40;X.fillStyle='#000';X.fillRect(2,2,1276,716);X.restore()}
-  const s=1.012,ox=(-mx*3+Math.sin(T*.21)*2),oy=(-my*2+Math.cos(T*.17)*1.5);X.drawImage(b,640-640*s+ox,360-360*s+oy,1280*s,720*s)}
+ if(b&&b.complete&&b.naturalWidth){const ox=-mx*4+Math.sin(T*.21)*2,oy=-my*3+Math.cos(T*.17)*1.5;X.drawImage(b,640-640*s+ox,360-360*s+oy,1280*s,720*s)}
  if(dim){X.fillStyle=`rgba(8,4,24,${dim})`;X.fillRect(v.x0,v.y0,v.w,v.h)}
- const g=X.createRadialGradient(640,360,300,640,360,900);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(20,8,0,.45)');X.fillStyle=g;X.fillRect(v.x0,v.y0,v.w,v.h)}
+ const g=X.createRadialGradient(640,360,300,640,360,900);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(20,8,0,.35)');X.fillStyle=g;X.fillRect(v.x0,v.y0,v.w,v.h)}
 // ---- рисование ----
 function wrap(t,maxW){const ws=t.split(' '),out=[];let cur='';for(const w of ws){const s=cur?cur+' '+w:w;if(X.measureText(s).width>maxW&&cur){out.push(cur);cur=w}else cur=s}if(cur)out.push(cur);return out}
 function txt(t,x,y,size,col,o){o=o||{};X.font=(o.b?'bold ':'')+size+'px '+(o.f||FONT);X.textAlign=o.al||'center';X.textBaseline='middle';
@@ -86,14 +85,17 @@ let cast=[];
 const NAMES={tim:['Юнга Тим','#ff7a4a'],mark:['Марк','#4a7ad8'],mey:['Мэй','#d84a7a'],flint:['Капитан Флинт','#2a9a3a'],narrator:['','#fff']};
 function cheer(){cast.forEach((c,i)=>{if(c.n!=='flint')c.jump=T+i*.08})}
 function oops(n){const c=cast.find(c=>c.n===n);if(c)c.wob=T}
-const HERO_K=1.3,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),safe=Math.max(20,Math.min(60,(v.w-1280)/2+20)),big=scene==='intro'||scene==='title'||scene==='fin';
- c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);if(big){c.x=c.bx;return}
- const hw=c.h*.3,lo=Math.max(v.x0+safe,0)+hw*.8,hi=Math.min(v.x0+v.w-safe,1280)-hw*.8;if(c.bx<640)c.x=Math.max(lo,Math.min(c.bx,c.bx-(c.h-c.h0)*.35));else c.x=Math.min(hi,Math.max(c.bx,c.bx+(c.h-c.h0)*.35))}
-// герои никогда не касаются друг друга: раздвигаем по ширине их картинки (+зазор), не выходя за картину
+const HERO_K=1.3,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),bs=bgScale(),si=(typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0);
+ const big=scene==='intro'||scene==='title'||scene==='fin';c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);
+ const px0=(v.x0-640*(1-bs))/bs,px1=(v.x0+v.w-640*(1-bs))/bs;const safe=Math.max(si+8,16);
+ const i=IM[c.n],hw=(i&&i.naturalWidth?c.h*i.naturalWidth/i.naturalHeight:c.h*.6)/2;
+ const lo=Math.max(v.x0+safe,px0+safe)+hw,hi=Math.min(v.x0+v.w-safe,px1-safe)-hw;
+ c.x=clamp(big?c.bx:c.bx+(c.bx<640?-(c.h-c.h0)*.2:(c.h-c.h0)*.2),lo,hi)}
 const HERO_GAP=14;function heroW(c){const i=IM[c.n];return i&&i.naturalWidth?c.h*i.naturalWidth/i.naturalHeight:c.h*.6}
 function separate(){const L=cast.slice().sort((a,b)=>a.x-b.x);for(let it=0;it<6;it++){let moved=false;
  for(let i=1;i<L.length;i++){const a=L[i-1],b=L[i],need=(heroW(a)+heroW(b))/2+HERO_GAP,d=b.x-a.x;if(d<need){const k=(need-d)/2;a.x-=k;b.x+=k;moved=true}}
- for(const c of L){const hw=heroW(c)/2;c.x=clamp(c.x,hw+4,1276-hw)}if(!moved)break}}
+ const v=vis(),si=(typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0),safe=Math.max(si+8,16);
+ for(const c of L){const hw=heroW(c)/2;c.x=clamp(c.x,v.x0+safe+hw,v.x0+v.w-safe-hw)}if(!moved)break}}
 function drawCast(){cast.forEach(heroFit);separate();cast.forEach(drawHero)}
 // ---- сцены ----
 const SC={};let scene='title',SCN=null;
