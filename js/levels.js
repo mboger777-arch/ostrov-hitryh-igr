@@ -44,7 +44,7 @@ SC.map={enter(){cast=[{n:'tim',x:75,y:715,h:170}];if(!SV.seenMap){SV.seenMap=1;s
   win('scroll',440,22,400,90);ink('Карта острова',640,67,46);
   MP.forEach((p,i)=>{const open=i<SV.open;const bob=Math.sin(T*1.6+i)*6;spr(i===4?'chest':'ship',p[0],p[1]+bob,i===4?110:120,{grey:!open,glow:open?1:0});
    txt(String(i+1),p[0]+44,p[1]-40+bob,40,open?'#ffe9a0':'#bbb',{st:'#3a1a06'});
-   if(!open)spr('xmark',p[0],p[1]+bob,70,{a:.9});win('plank',p[0]-105,p[1]+66,210,52);txt(LNAMES[i],p[0],p[1]+92,21,open?'#fff0c8':'#c8beb0',{st:'#2a1004',lw:4});
+   if(!open)spr('xmark',p[0],p[1]+bob,70,{a:.9});win('plank',p[0]-115,p[1]+66,230,52);txt(LNAMES[i],p[0],p[1]+92,21,open?'#fff0c8':'#c8beb0',{st:'#2a1004',lw:4,maxW:180});
    for(let s=0;s<3;s++)star(p[0]-36+s*36,p[1]+138,14,s<SV.stars[i])});
   const sc=SV.secret.reduce((a,b)=>a+b,0);win('plank',900,140,330,64);txt('Редкие дублоны: '+sc+' из 4',1065,173,24,'#fff0c8',{st:'#2a1004',lw:4});drawCast()},
  tap(x,y){MP.forEach((p,i)=>{if(Math.hypot(x-p[0],y-p[1])<70){if(i<SV.open){SFX.click();go('l'+(i+1))}else{SFX.bad();oops('tim')}}})}};
@@ -112,7 +112,7 @@ function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:
  draw(L){if(!L.g)return;drawPile(L,...o.draw);win('plank',1010,150,250,70);txt((o.k===2?'Монет: ':'Ядер: ')+L.g.n,1135,186,30,'#fff0c8',{st:'#2a1004'});
   if(L.reveal)strip(L,o.k,Math.max(L.g.n,o.k===2?12:16),o.stripY);
   if(L.q){win('frame',300,150,680,330);para(LINES[o.quiz.k].t,640,230,560,28)}
-  if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),155,186,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'})},
+  if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),155,185,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
  ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>give(L,i),{fs:28}));return}
   if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,q:L.q?L.q.a:null}}};levelScene(n)}
@@ -145,7 +145,7 @@ DEF[3]={init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:'mark',x:1160,y:712,h:250
    if(target>=0&&lg.includes(target)){const[x,y]=spotXY(target);X.save();X.translate(x,y);X.scale(1,TC.K);spr('plate',0,0,100,{a:.55+.25*Math.sin(T*5),glow:1});X.restore();
     if(L.lastAI!=null){const[ax,ay]=spotXY(L.lastAI);for(let k=0;k<=12;k++){const u=k/12;coinTok(ax+(x-ax)*u,ay+(y-ay)*u,5,{a:.5+.4*Math.sin(T*6-k)})}spr('compass',TC.x,TC.y,34,{a:.9,rot:T})}}}
   if(L.flash&&T-L.flash.t0<5){const[x,y]=spotXY(L.flash.i);X.save();X.translate(x,y);X.scale(1,TC.K);spr('plate',0,0,104,{a:.5+.4*Math.sin(T*8),glow:1.5});X.restore()}
-  if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Марк',155,186,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'})},
+  if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Марк',155,185,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
  tap(L,x,y){if(!L.myTurn)return;let best=-1,bd=1e9;tLegal(L.b).forEach(i=>{const[sx,sy]=spotXY(i);const d=Math.hypot(x-sx,(y-sy)/TC.K);if(d<bd){bd=d;best=i}});if(best>=0&&bd<TC.R*.5)give(L,best)},
  info(L){return{r:L.r,b:L.b,my:!!L.myTurn,best:L.b!=null?tLegal(L.b).find(j=>!tWin(L.b|CF[j])):null,legal:L.b!=null?tLegal(L.b):[]}}};levelScene(3);
 // ---------- УРОВЕНЬ 4: корабль на карте ----------
@@ -168,7 +168,7 @@ DEF[4]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'mey',x:1170,y:712,h:250,
    if(res){SFX.star();cheer();mood('mey','laugh');await say('l4win');if(!L.shownMap){L.shownMap=1;L.reveal=true;await say('l4map');await wait(1500)}L.lv++;if(await roundDone())return}
    else{SFX.bad();await say('l4lose');L.reveal=true;await say(rule==='king'?'l4h':'l4rh')}}},
  async hint(L){L.reveal=true;await say(L.g&&L.g.rule==='rook'?'l4rh':'l4h')},
- draw(L){drawGrid(L);if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Мэй',155,186,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'});
+ draw(L){drawGrid(L);if(L.turn||L.choose||L.myTurn)win('plank',30,150,250,70);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Мэй',155,185,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'});
   if(L.g){win('scroll',930,150,330,110);para(L.g.rule==='king'?'На 1 клетку влево, вниз или наискосок':'Влево или вниз на сколько угодно',1095,205,250,22)}},
  tap(L,x,y){gridTap(L,x,y)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn}}};levelScene(4);
@@ -191,7 +191,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
  draw(L){if(!L.g)return;if(L.g.t==='sub'){drawPile(L,L.g.k===2?'coin':'ball',L.g.k===2?58:64,640,560,66,9,54);win('plank',1010,150,250,70);txt((L.g.k===2?'Монет: ':'Ядер: ')+L.g.n,1135,186,30,'#fff0c8',{st:'#2a1004'});if(L.reveal)strip(L,L.g.k,Math.max(L.g.n,12),300)}
   else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-50,BOSS_GB.y-GH*BOSS_GB.c/2-46,GW*BOSS_GB.c+100,GH*BOSS_GB.c+92);drawGrid(L,BOSS_GB)}
   win('scroll',930,240,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,295,250,22);
-  if(L.turn||L.choose)win('plank',30,150,250,70);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',155,186,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
+  if(L.turn||L.choose)win('plank',30,150,250,70);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',155,185,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
   win('scroll',30,240,250,70);for(let i=0;i<3;i++)spr('chest',90+i*65,275,44,{grey:i>=L.hp})},
  ui(L){if(L.choose){btn('first',470,650,280,74,'Хожу первым',()=>give(L,true),{fs:30});btn('second',810,650,280,74,'Ходи, Флинт',()=>give(L,false),{fs:30})}
   else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},

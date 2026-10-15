@@ -27,8 +27,7 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  const hit=c.hit&&T-c.hit<1?1-(T-c.hit):0;if(hit){sy-=.12*hit*Math.abs(Math.sin((T-c.hit)*14));sx+=.06*hit;rot+=Math.sin((T-c.hit)*16)*.07*hit}
  const h=c.h,w=h*im.width/im.height;
  const lk=G.look||{x:PX,y:PY};const dir=clamp((lk.x-c.x)/600,-1,1)*(c.flip?-1:1);
- const amp=talking?ampNow(c):0;if(!c.am)c.am=0;c.am=c.am*.55+amp*.45;
- let headA=dir*.05+Math.sin(T*.9+ph)*.02+puz*.15*Math.sin(Math.min(1,(1-puz)*8)*1.57)+(talking?Math.sin((T-talk.t0)*3.3)*.035:0);
+  let headA=dir*.05+Math.sin(T*.9+ph)*.02+puz*.15*Math.sin(Math.min(1,(1-puz)*8)*1.57)+(talking?Math.sin((T-talk.t0)*3.3)*.025:0);
  if(c.mood==='laugh'&&T-c.moodT<1.5)headA+=Math.sin(T*28)*.05;
  X.save();X.translate(c.x,c.y);
  const sh=UA.shadow;if(okI(sh)){X.globalAlpha=.55;X.drawImage(sh,-w*.45,-w*.07,w*.9,w*.14);X.globalAlpha=1}
@@ -37,9 +36,18 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  X.save();clipExcept(w,h,rects);X.drawImage(im,0,0,w,h);X.restore();
  R.parts.forEach(p=>drawPart(im,w,h,p.r,p.p,p.f?p.f(T+ph,c):0));
  X.save();const hp=R.head.p;X.translate(hp[0]*w,hp[1]*h);X.rotate(headA);
- // squash-talk: голова чуть вытягивается и кивает в такт громкости голоса
- const nod=c.am*.045;X.scale(1-nod*.35,1+nod);X.translate(0,-c.am*h*.006);X.translate(-hp[0]*w,-hp[1]*h);
- X.beginPath();const hr=R.head.r;X.rect(hr[0]*w-1,hr[1]*h-1,(hr[2]-hr[0])*w+2,(hr[3]-hr[1])*h+2);X.clip();X.drawImage(im,0,0,w,h);
+ X.translate(-hp[0]*w,-hp[1]*h);
+ X.save();X.beginPath();const hr=R.head.r;X.rect(hr[0]*w-1,hr[1]*h-1,(hr[2]-hr[0])*w+2,(hr[3]-hr[1])*h+2);X.clip();X.drawImage(im,0,0,w,h);X.restore();
+ const hf=HF[c.n];if(hf){let vf=visFor(c);if(vf===0&&blinkOn(c))vf=5;const v=UA['v_'+c.n+vf];if(okI(v)){const hw=hf[2]*w,hh=hw*v.naturalHeight/v.naturalWidth;X.drawImage(v,hf[0]*w-hw/2,hf[1]*h-hh/2,hw,hh)}
+  if(hf[3]){X.beginPath();X.rect(-w,-h,w*3,h+hf[3]*h);X.clip();X.drawImage(im,0,0,w,h)}}
  X.restore();X.restore();
  if(puz>0&&c.n!=='flint'){const hx2=c.x,hy=c.y-h*1.02+dy;txt('?',hx2+Math.sin(T*6)*4,hy-10*Math.sin(puz*3),44*Math.min(1,puz*3),'#ffe066')}
  if(c.mood==='laugh'&&T-c.moodT<1.5)txt(c.n==='flint'?'Кар-р!':'Ха-ха!',c.x,c.y-h*1.05,40,'#ffe9a0')}
+const HF={"tim": [0.53, 0.235, 1.22, 0], "mark": [0.52, 0.34, 0.8, 0.215], "mey": [0.52, 0.36, 0.8, 0.22]};
+// 0 закрыт · 1 приоткрыт · 2 широко · 3 «О» · 4 улыбка · 5 моргание — по громкости голоса
+function visFor(c){if(c.forceV!=null)return c.forceV;const talking=talk&&talk.who===c.n;
+ if(talking){if(!c.vs)c.vs={f:0,t:0,env:0};const v=c.vs;const a=ampNow(c);v.env=v.env*.6+a*.4;
+  const tgt=v.env<.1?0:v.env<.28?1:v.env<.55?(Math.floor(T*4.3+c.x)%3===0?3:1):2;if(T-v.t>.085&&tgt!==v.f){v.f=tgt;v.t=T}return v.f}
+ if(c.wob&&T-c.wob<1.2)return 3;if(c.jump&&T-c.jump<1.2)return 4;if(c.mood==='happy'&&T-c.moodT<2)return 4;if(c.mood==='laugh'&&T-c.moodT<1.6)return 4;return 0}
+function blinkOn(c){if(c.forceV!=null)return false;if(!c.blN){c.blN=T+rnd(1,4);c.bl2=0}if(T>c.blN+.12){if(!c.bl2&&Math.random()<.25){c.bl2=1;c.blN=T+.12}else{c.bl2=0;c.blN=T+rnd(2.5,5)}}return T>=c.blN&&T<c.blN+.12}
+G.vis=n=>{const c=cast.find(c=>c.n===n);return c?visFor(c):-1};
