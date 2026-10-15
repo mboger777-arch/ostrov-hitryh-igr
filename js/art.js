@@ -35,7 +35,7 @@ function fitK(t,x,y,w,asc,desc,al){const m=X.getTransform(),k=Math.hypot(m.a,m.b
  if(!best)return 1;const I=innerOf(best);const aw=al==='left'?(I[2]-lx):al==='right'?(lx-I[0]):2*Math.min(lx-I[0],I[2]-lx);const ah=2*Math.min(ly-I[1],I[3]-ly);
  return clamp(Math.min(aw/(w*k),ah/((asc+desc)*k)),.3,1)}
 function tbox(x0,y0,x1,y1){const m=X.getTransform();const P=[[x0,y0],[x1,y0],[x0,y1],[x1,y1]].map(([x,y])=>new DOMPoint(x,y).matrixTransform(m));const xs=P.map(p=>p.x/DPR),ys=P.map(p=>p.y/DPR);return[Math.min(...xs),Math.min(...ys),Math.max(...xs),Math.max(...ys)]}
-function audT(t,x,y,w,asc,desc,al){if(X.globalAlpha<.05)return;const l=al==='left'?x:al==='right'?x-w:x-w/2;FB.t.push({t,bub:AUDBUB,b:lbox(l,y-asc,l+w,y+desc)});if(AUD)AUD.t.push({t,b:tbox(l,y-asc,l+w,y+desc)})}let AUDBUB=0;
+function audT(t,x,y,w,asc,desc,al){if(X.globalAlpha<.05)return;const l=al==='left'?x:al==='right'?x-w:x-w/2;FB.t.push({t,bub:AUDBUB,b:lbox(l,y-asc,l+w,y+desc)});if(AUD)AUD.t.push({t,bub:AUDBUB,b:tbox(l,y-asc,l+w,y+desc)})}let AUDBUB=0;
 // цифры: не меньше ~28px высоты глифа на экране (телефон), остальной текст — как задан
 const DIGIT_PX=28;function txt(t,x,y,size,col,o){o=o||{};t=String(t);if(!o._seg&&(/^\d+$/.test(t)||/^[^\d]{1,20}\s\d+(\s?(\/|из)\s?\d+)?$/.test(t))){if(o.maxW){X.font=size+'px '+FONT;const mw=X.measureText(t).width;if(mw>o.maxW)size=Math.floor(size*o.maxW/mw)}
   let D=Math.min(Math.max(size,Math.ceil(DIGIT_PX/(.72*S))),Math.round(size*2.3));if(D>size){const runs=t.match(/\d+|\D+/g).map(r=>({r,d:/\d/.test(r)}));
@@ -70,28 +70,50 @@ function drawParticles(){for(const p of PS){X.save();X.globalAlpha=Math.min(1,p.
  X.restore()}}
 // ---- облачко речи: пергаментный пузырь ----
 function ovl(a,b){return Math.max(0,Math.min(a[2],b[2])-Math.max(a[0],b[0]))*Math.max(0,Math.min(a[3],b[3])-Math.max(a[1],b[1]))}
-function bubbleCost(r0,c){const r=[r0[0]-5,r0[1]-5,r0[2]+5,r0[3]+5];let o=0;for(const q of FBP.c)if(q.n!=='bubble')o+=ovl(r,q.b);for(const q of FBP.t)if(!q.bub)o+=ovl(r,q.b)*2;for(const q of FBP.h)o+=ovl(r,q.b);return o}
-function placeBubble(c,bw,bh){const v=vis();
- const hx=c?c.x:640,hy=c?c.y-c.h*.97:0;let best=null;const sl=v.x0+(typeof SAFE!=='undefined'?SAFE.l/S:0),sr=v.x0+v.w-(typeof SAFE!=='undefined'?SAFE.r/S:0),st=v.y0+(typeof SAFE!=='undefined'?SAFE.t/S:0),sb=v.y0+v.h-(typeof SAFE!=='undefined'?SAFE.b/S:0);const x0=sl+6,x1=sr-bw-6,y0=st+6,y1=sb-bh-6;
- for(let by=y0;by<=y1+.1;by+=Math.max(8,(y1-y0)/36))for(let bx=x0;bx<=x1+.1;bx+=Math.max(8,(x1-x0)/60)){const r=[bx,by,bx+bw,by+bh];const o=bubbleCost(r,c);
-  const fl=c?hx>bx+bw/2:false,tx=fl?bx+bw*.85:bx+bw*.15,ty=by+bh;const d=c?Math.hypot(tx-hx,ty-hy):Math.abs(bx+bw/2-640)+by;const sc=o*40+d;if(!best||sc<best[4])best=[bx,by,fl,o,sc]}
- if(!best)best=[640-bw/2,8,false,1e9,0];return best}
+// ===== Система пояснений: плашка-пояснение (banner) + облачко реплики. Всегда видны, крупные, не перекрывают кнопки и друг друга =====
+const MINPX=15;const HARDN=new Set(['compass','coinbtn','plank','scroll']);function minFs(){return Math.max(17,MINPX/Math.max(.1,S))}
+function safeRect(){const v=vis(),sf=typeof SAFE!=='undefined'?SAFE:{l:0,r:0,t:0,b:0};return[v.x0+sf.l/S+6,v.y0+sf.t/S+6,v.x0+v.w-sf.r/S-6,v.y0+v.h-sf.b/S-6]}
+function uiBoxes(){return PUI.filter(e=>e.id!=='fs'||1).map(e=>[e.x-e.w/2-4,e.y-e.h/2-4,e.x+e.w/2+4,e.y+e.h/2+4])}
+function explCost(r0,hard,skipBub){let h=0,s=0;const r=[r0[0]-10,r0[1]-10,r0[2]+10,r0[3]+10];for(const b of uiBoxes())h+=ovl(r,b);for(const b of hard)if(b)h+=ovl(r,b);
+ for(const q of FBP.c){if(q.n==='bubble'||q.n==='banner')continue;if(HARDN.has(q.n))h+=ovl(r,q.b);else s+=ovl(r,q.b)*(q.n==='cell'||q.n==='tabletop'?3:1)}for(const q of FBP.t)if(!q.bub)s+=ovl(r,q.b)*2;for(const q of FBP.h){const b=q.b,hd=[b[0],b[1],b[2],b[1]+(b[3]-b[1])*.42];h+=ovl(r,hd)*.6;s+=ovl(r,b)*4}return[h,s]}
+function bubbleCost(r0,c){const r=[r0[0]-5,r0[1]-5,r0[2]+5,r0[3]+5];const[h,s]=explCost(r,[]);return h+s}
+function gridSearch(bw,bh,score){const[x0,y0,x1r,y1r]=safeRect();const x1=Math.max(x0,x1r-bw),y1=Math.max(y0,y1r-bh);let best=null;
+ for(let by=y0;by<=y1+.1;by+=Math.max(6,(y1-y0)/40))for(let bx=x0;bx<=x1+.1;bx+=Math.max(6,(x1-x0)/64)){const sc=score(bx,by);if(!best||sc[0]<best[2][0])best=[bx,by,sc]}return best||[x0,y0,[0,0]]}
+// --- плашка-пояснение ---
+let BAN=null;
+// плашка-пояснение; если в этот момент кто-то говорит, его реплика входит в ту же плашку (одна карточка: «кто говорит» + «почему»), чтобы два окна не спорили за место
+function bannerDims(t,tk,bad){const fs=Math.round(Math.max(26,minFs())),[x0,,x1]=safeRect();const maxW=(Math.min(H>520?800:980,x1-x0-20))*.84-fs*.8;const lh=Math.round(fs*1.22);const R=[];
+ X.font=fs+'px '+FONT;if(tk){const c=cast.find(q=>q.n===tk.who);if(c&&NAMES[c.n])R.push({s:NAMES[c.n][0],fs:Math.round(fs*.92),col:NAMES[c.n][1],st:'#fff4dc',lh});wrap(tk.text,maxW).forEach(l=>R.push({s:l,fs,col:'#2a1004',lh}));R.push({gap:Math.round(fs*.45)})}
+ wrap(t,maxW).forEach(l=>R.push({s:l,fs,col:bad?'#7a1406':'#3a1a04',lh}));let tw=0,th=0;for(const r of R){if(r.gap){th+=r.gap;continue}X.font=r.fs+'px '+FONT;tw=Math.max(tw,X.measureText(r.s).width);th+=r.lh}
+ const w=Math.min(x1-x0,(tw+fs*.8)/.84),h=(th+fs*.5)/.82;return{fs,R,th,w,h}}
+function drawBanner(){const b=typeof LV!=='undefined'&&LV&&String(scene)[0]==='l'&&LV.banner;if(!b){BAN=null;return null}const tk=talk&&LINES[talk.k]?talk:null;const key=b.t+'|'+(tk?tk.k:'')+'|'+W+'x'+H;
+ if(!BAN||BAN.key!==key||T-BAN.T>.6){const d=bannerDims(b.t,tk,b.bad);const pref=b.y||100;const p=gridSearch(d.w,d.h,(bx,by)=>{const r=[bx,by,bx+d.w,by+d.h];let[h,s]=explCost(r,[]);for(const q of FBP.h)h+=ovl(r,q.b)*.3;return[h*1e3+s*8+Math.abs(by-pref)*2+Math.abs(bx+d.w/2-640)*.6]});BAN={key,T,d,x:p[0],y:p[1],tk:!!tk}}
+ const{d,x,y}=BAN;X.save();X.globalAlpha=Math.min(1,.15+ease(Math.min(1,(T-b.t0)*4)));win(b.bad?'frame':'scroll',x,y,d.w,d.h,false,'banner');AUDBUB=1;
+ let yy=y+d.h/2-d.th/2;for(const r of d.R){if(r.gap){yy+=r.gap;continue}txt(r.s,x+d.w/2,yy+r.lh/2,r.fs,r.col,{st:r.st||'rgba(255,244,220,.85)',lw:Math.max(3,r.fs*.16),noFit:1,_seg:1});yy+=r.lh}
+ AUDBUB=0;X.restore();if(BAN.tk&&talk){talk.box=[x,y,d.w,d.h];talk.D={fs:d.fs};talk.dk=null}return BAN.tk?'merged':[x,y,x+d.w,y+d.h]}
+// --- облачко ---
 function bubbleDims(c,fs,maxW){const lh=Math.round(fs*1.23),nfs=Math.round(fs*.92);X.font=fs+'px '+FONT;const L=wrap(talk.text,maxW);const tw=Math.max(...L.map(l=>X.measureText(l).width));X.font=nfs+'px '+FONT;const nw=c?X.measureText(NAMES[c.n][0]).width:0;
- const padX=Math.round(fs*1.75),padY=Math.round(fs*1.3);const bw=Math.max(200,Math.max(tw,nw)+padX*2);const nh=c?Math.round(fs*1.23):0,textH=L.length*lh+nh;
- const bi=UA.bubble,iw=okI(bi)?bi.naturalWidth:257,ih=okI(bi)?bi.naturalHeight:185;const tailF=.24;
- let bodyH=textH+padY*2,bh=bodyH;for(let k=0;k<3;k++){const kk=Math.min(bw/iw,bh/ih,1.1);bh=bodyH+tailF*ih*kk}const kk=Math.min(bw/iw,bh/ih,1.1);bodyH=bh-tailF*ih*kk;
- return{fs,lh,nfs,nh,L,bw,bh,bodyH,textH}}
-const BCFG=[[30,480],[28,520],[26,440],[26,560],[23,640],[23,380],[21,720],[21,320],[19,820],[19,280],[17,900],[17,240]];
-function drawTalk(){if(!talk){drawReacts();return}const c=cast.find(c=>c.n===talk.who);
- const key=talk.k+'|'+W+'x'+H;let D,pl;
- if(talk.dk===key&&talk.D&&(T-talk.dT<.5||talk.dpl[3]===0)){D=talk.D;pl=talk.dpl}
- else{let best=null;for(const[fs,mw]of BCFG){const d=bubbleDims(c,fs,c?mw:Math.max(mw,860));talk.pl=null;const p=placeBubble(c,d.bw,d.bh);if(!best||p[3]<best[1][3]-1)best=[d,p];if(p[3]===0)break}
+ const nh=c?Math.round(fs*1.23):0,textH=L.length*lh+nh;const TW=Math.max(tw,nw)+fs*.8,TH=textH+fs*.5;
+ // облачко-эллипс: тело занимает y∈[.04,.86]·h, x∈[0,1]·w; текст вписан в эллипс с запасом на бугорки
+ let bw=Math.max(220,TW/.84/.9),bh=TH/.64;
+ return{fs,lh,nfs,nh,L,bw,bh,bodyH:bh*.82,textH}}
+function placeBubble(c,bw,bh,hard){hard=hard||[];const hx=c?c.x:640,hy=c?c.y-c.h*.97:0;
+ const p=gridSearch(bw,bh,(bx,by)=>{const r=[bx-5,by-5,bx+bw+5,by+bh+5];const[h,s]=explCost(r,hard);const fl=c?hx>bx+bw/2:false,tx=fl?bx+bw*.85:bx+bw*.15,ty=by+bh;const d=c?Math.hypot(tx-hx,ty-hy):Math.abs(bx+bw/2-640)+Math.abs(by-120);return[h*1e3+s*12+d*1.5+Math.max(0,Math.min(by+bh,560)-Math.max(by,220))*Math.max(0,Math.min(bx+bw,1000)-Math.max(bx,280))*.004,h,s,fl]});
+ return[p[0],p[1],p[2][3]||false,p[2][1]>0?p[2][1]*1e3+p[2][2]:p[2][2],p[2][0],p[2][1]]}
+const BCFG=[[32,520],[30,560],[28,620],[28,480],[26,700],[26,420],[24,780],[24,380],[22,880],[22,340],[30,900],[28,1000],[26,1100]];
+function drawTalk(){const bb=drawBanner();if(!talk||bb==='merged'){drawReacts();return}const c=cast.find(c=>c.n===talk.who);
+ const key=talk.k+'|'+W+'x'+H+'|'+(bb?bb.map(Math.round).join(','):'');let D,pl;
+ if(talk.dk===key&&talk.D&&T-talk.dT<.6){D=talk.D;pl=talk.dpl}
+ else{const mf=minFs(),[sx0,sy0,sx1,sy1]=safeRect();let best=null;const seen=new Set();
+  for(const[f0,mw0]of BCFG){const fs=Math.max(f0,Math.round(mf)),mw=Math.min((c?mw0:Math.max(mw0,860))*Math.max(1,fs/30),sx1-sx0-fs*4);const kk=fs+'_'+Math.round(mw);if(seen.has(kk))continue;seen.add(kk);
+   const d=bubbleDims(c,fs,mw);if(d.bw>sx1-sx0||d.bh>sy1-sy0||d.bh>d.bw*.75)continue;const p=placeBubble(c,d.bw,d.bh,[bb]);const sc=p[4]+(34-fs)*25+d.bw*.25;if(!best||sc<best[2])best=[d,p,sc]}
+  if(!best){const fs=Math.round(mf);const d=bubbleDims(c,fs,sx1-sx0-fs*4);best=[d,placeBubble(c,d.bw,d.bh,[bb])]}
   D=best[0];pl=best[1];talk.D=D;talk.dpl=pl;talk.dk=key;talk.dT=T}
  const{fs,lh,nfs,nh,L,bw,bh,bodyH,textH}=D;
  const age=T-talk.t0,pop=age<.18?.7+.3*ease(age/.18):1;const bx=pl[0],by=pl[1],flip=pl[2];
  X.save();const ox=flip?bx+bw*.85:bx+bw*.15;X.translate(ox,by+bh);X.scale(pop,pop);X.translate(-ox,-by-bh);
  win('bubble',bx,by,bw,bh,flip);AUDBUB=1;const cx=bx+bw/2;let y0=by+bodyH/2-textH/2;
- if(c){txt(NAMES[c.n][0],cx,y0+nh*.4,nfs,NAMES[c.n][1],{st:'#fff4dc',lw:5});y0+=nh}
- L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#2a1004',{st:'rgba(255,244,220,.7)',lw:3}));AUDBUB=0;X.restore();
+ if(c){txt(NAMES[c.n][0],cx,y0+nh*.4,nfs,NAMES[c.n][1],{st:'#fff4dc',lw:5,noFit:1});y0+=nh}
+ L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#2a1004',{st:'rgba(255,244,220,.7)',lw:3,noFit:1,_seg:1}));AUDBUB=0;X.restore();
  talk.box=[bx,by,bw,bh];drawReacts()}
 go('title');requestAnimationFrame(loop);

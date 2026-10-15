@@ -70,8 +70,7 @@ function levelScene(n){SC['l'+n]={enter(){if(LV&&LV.n===n&&LV.resume){LV.resume=
   LV={n,r:0,mist:0,lv:0,done:false,banner:null,def:DEF[n],reveal:false};DEF[n].init(LV);cast=LV.cast;DEF[n].start(LV).catch(e=>console.error(e))},
  draw(){bgDraw('l'+n,0);motes(45);if(!LV.done)DEF[n].draw(LV);drawCast();
   if(n<5&&!SV.secret[n-1]&&!LV.done){const[sx,sy]=SECRET_POS[n-1];coinTok(sx,sy,13,{a:.45+.35*Math.sin(T*3),glow:.8+.4*Math.sin(T*3),rot:T})}
-  if(LV.banner){const b=LV.banner;X.font='26px '+FONT;const L=wrap(b.t,640),w=Math.max(...L.map(l=>X.measureText(l).width))+120,h=L.length*33+78,y=Math.min(b.y||100,712-h);
-   X.globalAlpha=ease((T-b.t0)*4);win(b.bad?'frame':'scroll',640-w/2,y,w,h);L.forEach((l,i)=>ink(l,640,y+h/2-(L.length-1)*16.5+i*33,26,{col:b.bad?'#8a1a08':'#4a2208'}));X.globalAlpha=1}},
+},
  ui(){win('scroll',450,0,380,64);ink(LNAMES[n-1],640,32,28);for(let i=0;i<ROUNDS[n-1];i++)coinTok(640-(ROUNDS[n-1]-1)*17+i*34,82,12,{grey:i>=LV.r});
   btn('home',74,66,84,64,'⌂',()=>{go('map')},{always:1});if(!LV.done)btn('hint',1214,58,76,64,'?',()=>{if(!G.busy)run(()=>DEF[n].hint(LV))},{fs:36});
   if(DEF[n].ui&&!LV.done)DEF[n].ui(LV);if(LV.done)endPanel(n)},
@@ -110,9 +109,9 @@ function drawPile(L,spr_,h,cx,cy,sp,per,rowH){const n=L.g.n;const sl=pileSlots(n
  L.fly=(L.fly||[]).filter(f=>T-f.t0<.6)}
 function pileAnim(L,cx,cy,sp,per,rowH){return(a,b)=>{const sl=pileSlots(a.n,cx,cy,sp,per,rowH);const tx=L.turn==='me'||L.myTurnAnim?160:1130;
  for(let i=b.n;i<a.n;i++){const[x,y]=sl[i];(L.fly=L.fly||[]).push({x,y,tx:L.turn==='me'?170:1110,ty:520,t0:T+(i-b.n)*.08})}SFX.clang()}}
-function strip(L,k,max,y,maxW){// «лестница секретов»: числа 0..max, крестики на проигрышных
- const n=Math.min(max,18),sp=Math.min(62,(maxW||1100)/(n+1));const x0=640-n*sp/2;win('scroll',x0-72,y-46,n*sp+144,92);
- for(let i=0;i<=n;i++){const x=x0+i*sp,p=!subW(k,i);if(p)spr('xmark',x,y,sp*.95,{a:.85});txt(String(i),x,y,i===L.g.n?32:24,i===L.g.n?'#ffe066':p?'#ffd8c0':'#fff3d6',{st:'#3a1a06',lw:5,maxD:sp*.92})}}
+function strip(L,k,max,y,maxW,cx){cx=cx||640;// «лестница секретов»: числа 0..max, крестики на проигрышных
+ const n=Math.min(max,18),sp=Math.min(47,(maxW||1100)/(n+1));const x0=cx-n*sp/2;win('scroll',x0-72,y-46,n*sp+144,92);
+ for(let i=0;i<=n;i++){const x=x0+i*sp,p=!subW(k,i);if(p)spr('xmark',x,y,sp*.95,{a:.85});txt(String(i),x,y,i===L.g.n?32:24,i===L.g.n?'#ffe066':p?'#ffd8c0':'#fff3d6',{st:'#3a1a06',lw:5,maxD:sp*.8})}}
 function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:o.opp,x:1160,y:712,h:250,flip:1}];L.moveAnim=pileAnim(L,...o.pile)},
  newGame(L){const r=L.r;const pf=o.pf(r);const pool=pf?o.pP[Math.min(L.lv,2)]:o.pN[Math.min(L.lv,2)];L.g={t:'sub',k:o.k,n:pool[Math.floor(Math.random()*pool.length)]};L.pf=pf;L.fly=[]},
  async start(L){await this.loop(L)},
@@ -125,16 +124,16 @@ function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:
   SFX.ok();cheer();banner(o.quiz.ok);await say(o.quiz.ok_k);await wait(500);L.banner=null;await roundDone()},
  async hint(L){L.reveal=true;await say(o.hk)},
  draw(L){if(!L.g)return;drawPile(L,...o.draw);win('plank',1010,150,250,70);txt((o.k===2?'Монет: ':'Ядер: ')+L.g.n,1135,186,30,'#fff0c8',{st:'#2a1004'});
-  if(L.reveal)strip(L,o.k,Math.max(L.g.n,o.k===2?12:16),o.stripY);
+  if(L.reveal)strip(L,o.k,Math.max(L.g.n,o.k===2?12:16),o.stripY,800);
   if(L.q){win('frame',300,150,680,330);para(LINES[o.quiz.k].t,640,230,560,28)}
   if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
  ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>give(L,i),{fs:28}));return}
   if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,q:L.q?L.q.a:null}}};levelScene(n)}
 subLevel(1,{opp:'mark',k:2,intro:'l1i',hk:'l1h',wk:'l1win',lk:'l1lose',pfk:'l1pf',pf:r=>r===2,
- pN:[[4,5,7],[7,8,10],[11,13,14,16]],pP:[[6],[9],[12,15]],pile:[640,470,64,9,48],draw:['coin',62,640,470,64,9,48],stripY:300});
+ pN:[[4,5,7],[7,8,10],[11,13,14,16]],pP:[[6],[9],[12,15]],pile:[640,470,64,9,48],draw:['coin',62,640,470,64,9,48],stripY:528});
 subLevel(2,{opp:'mey',k:3,intro:'l2i',hk:'l2h',wk:'l2win',lk:'l2lose',pfk:'l1pf',pf:r=>r===3,
- pN:[[5,6,7],[9,10,11],[13,14,15,17]],pP:[[8],[12],[16]],pile:[640,560,74,8,58],draw:['ball',70,640,560,74,8,58],stripY:300,
+ pN:[[5,6,7],[9,10,11],[13,14,15,17]],pP:[[8],[12],[16]],pile:[640,560,74,8,58],draw:['ball',70,640,560,74,8,58],stripY:445,
  quiz:{r:1,k:'l2q',opts:['5, 10, 15','6, 12, 18','4, 8, 12'],a:1,wk:'l2qw',ok_k:'l2qok',why:'Если брать можно от 1 до 5, соперник и ты вместе всегда можете добрать до 6. Значит, проигрышные — кратные шести.',ok:'Верно! Можно брать до 5 → оставляй кратное 6 (5 + 1).'}});
 DEF[2].opp='mey';
 // ---------- УРОВЕНЬ 3: тарелки, симметрия ----------
@@ -203,7 +202,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
    if(res){L.hp--;const c=cast.find(c=>c.n==='flint');if(c)c.hit=T;shake=10;SFX.hit();burst(1140,450,30,'spark',48);if(L.hp>0)await say('l5hit');else await say('l5end');if(await roundDone())return}
    else{SFX.bad();mood('flint','laugh');await say('l5lose');L.reveal=true}}},
  async hint(L){L.reveal=true;await say('l5h')},
- draw(L){if(!L.g)return;if(L.g.t==='sub'){drawPile(L,L.g.k===2?'coin':'ball',L.g.k===2?58:64,640,560,66,9,54);win('plank',515,100,250,62);txt((L.g.k===2?'Монет: ':'Ядер: ')+L.g.n,640,132,28,'#fff0c8',{st:'#2a1004'});if(L.reveal)strip(L,L.g.k,Math.max(L.g.n,12),330,560)}
+ draw(L){if(!L.g)return;if(L.g.t==='sub'){drawPile(L,L.g.k===2?'coin':'ball',L.g.k===2?58:64,640,560,66,9,54);win('plank',515,100,250,62);txt((L.g.k===2?'Монет: ':'Ядер: ')+L.g.n,640,132,28,'#fff0c8',{st:'#2a1004'});if(L.reveal)strip(L,L.g.k,Math.max(L.g.n,12),448,600,600)}
   else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-50,BOSS_GB.y-GH*BOSS_GB.c/2-46,GW*BOSS_GB.c+100,GH*BOSS_GB.c+92);drawGrid(L,BOSS_GB)}
   win('scroll',930,150,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,205,250,22);
   if(L.turn||L.choose)win('plank',150,6,250,62);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',275,37,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
