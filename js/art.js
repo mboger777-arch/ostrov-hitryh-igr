@@ -75,9 +75,10 @@ const MINPX=15;const HARDN=new Set(['compass','coinbtn','plank','scroll']);funct
 function safeRect(){const v=vis(),sf=typeof SAFE!=='undefined'?SAFE:{l:0,r:0,t:0,b:0};return[v.x0+sf.l/S+6,v.y0+sf.t/S+6,v.x0+v.w-sf.r/S-6,v.y0+v.h-sf.b/S-6]}
 function uiBoxes(){return PUI.filter(e=>e.id!=='fs'||1).map(e=>[e.x-e.w/2-4,e.y-e.h/2-4,e.x+e.w/2+4,e.y+e.h/2+4])}
 function explCost(r0,hard,skipBub){let h=0,s=0;const r=[r0[0]-10,r0[1]-10,r0[2]+10,r0[3]+10];for(const b of uiBoxes())h+=ovl(r,b);for(const b of hard)if(b)h+=ovl(r,b);
- for(const q of FBP.c){if(q.n==='bubble'||q.n==='banner')continue;if(HARDN.has(q.n))h+=ovl(r,q.b);else s+=ovl(r,q.b)*(q.n==='cell'||q.n==='tabletop'?3:1)}for(const q of FBP.t)if(!q.bub)s+=ovl(r,q.b)*2;for(const q of FBP.h){const b=q.b,hd=[b[0],b[1],b[2],b[1]+(b[3]-b[1])*.42];h+=ovl(r,hd)*.6;s+=ovl(r,b)*4}return[h,s]}
+ for(const q of FBP.c){if(q.n==='bubble'||q.n==='banner')continue;if(HARDN.has(q.n))h+=ovl(r,q.b);else s+=ovl(r,q.b)*(q.n==='cell'||q.n==='tabletop'?3:1)}for(const q of FBP.t)if(!q.bub)s+=ovl(r,q.b)*10;for(const q of FBP.h){const b=q.b,hd=[b[0],b[1],b[2],b[1]+(b[3]-b[1])*.42];h+=ovl(r,hd)*.6;s+=ovl(r,b)*4}return[h,s]}
 function bubbleCost(r0,c){const r=[r0[0]-5,r0[1]-5,r0[2]+5,r0[3]+5];const[h,s]=explCost(r,[]);return h+s}
-function gridSearch(bw,bh,score){const[x0,y0,x1r,y1r]=safeRect();const x1=Math.max(x0,x1r-bw),y1=Math.max(y0,y1r-bh);let best=null;
+function topBar(){const st=safeRect()[1];let b=st;for(const q of FBP.c)if(HARDN.has(q.n)&&q.b[1]<st+24&&q.b[3]<st+170)b=Math.max(b,q.b[3]+12);return b}
+function gridSearch(bw,bh,score){const sr=safeRect();const x0=sr[0],x1r=sr[2],y1r=sr[3];let y0=topBar();if(y1r-y0<bh)y0=Math.max(sr[1],y1r-bh);const x1=Math.max(x0,x1r-bw),y1=Math.max(y0,y1r-bh);let best=null;
  for(let by=y0;by<=y1+.1;by+=Math.max(6,(y1-y0)/40))for(let bx=x0;bx<=x1+.1;bx+=Math.max(6,(x1-x0)/64)){const sc=score(bx,by);if(!best||sc[0]<best[2][0])best=[bx,by,sc]}return best||[x0,y0,[0,0]]}
 // --- плашка-пояснение ---
 let BAN=null;
@@ -116,4 +117,4 @@ function drawTalk(){const bb=drawBanner();if(!talk||bb==='merged'){drawReacts();
  if(c){txt(NAMES[c.n][0],cx,y0+nh*.4,nfs,NAMES[c.n][1],{st:'#fff4dc',lw:5,noFit:1});y0+=nh}
  L.forEach((l,i)=>txt(l,cx,y0+i*lh+lh/2,fs,'#2a1004',{st:'rgba(255,244,220,.7)',lw:3,noFit:1,_seg:1}));AUDBUB=0;X.restore();
  talk.box=[bx,by,bw,bh];drawReacts()}
-go('title');requestAnimationFrame(loop);
+startGame();

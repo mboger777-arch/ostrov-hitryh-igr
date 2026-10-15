@@ -67,7 +67,7 @@ SC.map={enter(){cast=[{n:'tim',x:70,y:715,h:160}];if(!SV.seenMap){SV.seenMap=1;s
 const SECRET_POS=[[1215,250],[80,250],[1230,300],[70,330]];
 const DEF={};
 function levelScene(n){SC['l'+n]={enter(){if(LV&&LV.n===n&&LV.resume){LV.resume=false;cast=LV.cast;return}
-  LV={n,r:0,mist:0,lv:0,done:false,banner:null,def:DEF[n],reveal:false};DEF[n].init(LV);cast=LV.cast;DEF[n].start(LV).catch(e=>console.error(e))},
+  LV={n,r:0,mist:0,lv:0,done:false,banner:null,def:DEF[n],reveal:false};DEF[n].init(LV);cast=LV.cast;DEF[n].start(LV).catch(e=>{if(e!==STALE)console.error(e)})},
  draw(){bgDraw('l'+n,0);motes(45);if(!LV.done)DEF[n].draw(LV);drawCast();
   if(n<5&&!SV.secret[n-1]&&!LV.done){const[sx,sy]=SECRET_POS[n-1];coinTok(sx,sy,13,{a:.45+.35*Math.sin(T*3),glow:.8+.4*Math.sin(T*3),rot:T})}
 },
@@ -76,7 +76,7 @@ function levelScene(n){SC['l'+n]={enter(){if(LV&&LV.n===n&&LV.resume){LV.resume=
   if(DEF[n].ui&&!LV.done)DEF[n].ui(LV);if(LV.done)endPanel(n)},
  tap(x,y){if(LV.done)return;if(n<5&&!SV.secret[n-1]&&!G.busy){const[sx,sy]=SECRET_POS[n-1];if(Math.hypot(x-sx,y-sy)<40){LV.resume=true;go('secret',n);return}}if(DEF[n].tap)DEF[n].tap(LV,x,y)}}}
 function banner(t,bad,y){LV.banner={t,bad,t0:T,y}}
-async function roundDone(){LV.r++;LV.banner=null;if(LV.r>=ROUNDS[LV.n-1]){LV.done=true;LV.doneT=T;const st=LV.mist===0?3:LV.mist<=2?2:1;LV.stars=st;SV.stars[LV.n-1]=Math.max(SV.stars[LV.n-1],st);SV.open=Math.max(SV.open,Math.min(5,LV.n+1));save();cheer();for(let i=0;i<3;i++)setTimeout(()=>{if(i<st){SFX.star();burst(560+i*80,368,24,'spark',48)}},500+i*350);if(LV.n<5)await say('win');return true}return false}
+async function roundDone(){LV.r++;LV.banner=null;if(LV.r>=ROUNDS[LV.n-1]){LV.done=true;LV.doneT=T;const st=LV.mist===0?3:LV.mist<=2?2:1;LV.stars=st;SV.stars[LV.n-1]=Math.max(SV.stars[LV.n-1],st);SV.open=Math.max(SV.open,Math.min(5,LV.n+1));save();cheer();const cx_=ctxNow();for(let i=0;i<3;i++)setTimeout(()=>{if(i<st&&alive(cx_)){SFX.star();burst(560+i*80,368,24,'spark',48)}},500+i*350);if(LV.n<5)await say('win');return true}return false}
 function endPanel(n){win('frame',340,110,600,430);ink(n<5?'Игра пройдена!':'Флинт побеждён!',640,215,40,{col:'#8a4a08'});
  for(let i=0;i<3;i++){const k=ease((T-LV.doneT-.5-i*.35)*3);star(560+i*80,320,30,i<LV.stars&&k>0,k>0?.4+.6*k:1)}
  ink(LV.mist===0?'Без единой ошибки!':'Ошибок: '+LV.mist,640,420,28);
@@ -84,7 +84,7 @@ function endPanel(n){win('frame',340,110,600,430);ink(n<5?'Игра пройде
  if(n<5)btn('next',770,600,220,70,'Дальше ›',()=>go('l'+(n+1)),{always:1,pulse:1});else btn('fin',770,600,220,70,'Финал ›',()=>go('fin'),{always:1,pulse:1})}
 // ---------- общий движок «игра на двоих» ----------
 function waitInput(L){return new Promise(r=>{L.inp=r})}
-function give(L,v){if(L.inp&&!L.animB){const r=L.inp;L.inp=null;r(v)}}
+function give(L,v){if(L.inp&&!L.animB){const r=L.inp;L.inp=null;L.banner=null;L.flash=null;r(v)}}
 function nameOf(n){return{mark:'Марк',mey:'Мэй',flint:'Флинт'}[n]}
 function fmt(g){return g.t==='sub'?String(g.n):'('+g.x+', '+g.y+')'}
 function explain(L,before,after,opp){const m=gMoves(before).filter(p=>!gWin(p))[0];
@@ -93,14 +93,16 @@ function explain(L,before,after,opp){const m=gMoves(before).filter(p=>!gWin(p))[
   return 'Ты оставил '+after.n+' — это не делится на '+K+'. '+nameOf(opp)+' возьмёт '+(after.n%K)+' и оставит '+(after.n-after.n%K)+'. Нужно было взять '+(before.n-m.n)+' и оставить '+m.n+'.'}
  return 'Корабль не на крестике: '+nameOf(opp)+' сможет приплыть на крестик. Лучше было плыть на мерцающую клетку.'}
 // L.g — позиция, L.turn 'me'|'ai'. Возвращает true, если ребёнок взял последний / доплыл
-async function playGame(L,opp,meFirst){L.turn=meFirst?'me':'ai';L.over=false;
+// пока ребёнок в секретной комнате — партия ждёт, а не обрывается (иначе после возврата ИИ не ходит)
+async function holdSec(L){while(scene==='secret'&&LV===L&&L.resume)await wait(150)}
+async function playGame(L,opp,meFirst){L.turn=meFirst?'me':'ai';L.over=false;L.banner=null;
  while(true){if(gEnd(L.g)){L.over=true;return L.turn==='ai'}// ход перешёл к ИИ, значит конец сделал ребёнок
-  if(scene!=='l'+L.n)return null;
+  await holdSec(L);if(scene!=='l'+L.n)return null;
   if(L.turn==='me'){const before=L.g;L.myTurn=true;const nxt=await waitInput(L);L.myTurn=false;L.flash=null;
    if(gWin(before)&&gWin(nxt)){L.mist++;L.lv=Math.max(0,L.lv-1);SFX.bad();oops('tim');L.flash={g:gMoves(before).find(p=>!gWin(p)),t0:T};banner(explain(L,before,nxt,opp),true);L.moveAnim(before,nxt);await say('oops');await wait(1200)}
    else{L.moveAnim(before,nxt);if(gWin(before)&&!gEnd(nxt)&&Math.random()<.35){SFX.ok();mood('tim','happy')}await wait(650)}
    L.g=nxt;L.turn='ai'}
-  else{await wait(800);const nxt=aiMove(L.g);swing(opp);L.moveAnim(L.g,nxt);L.g=nxt;L.turn='me';await wait(700)}}}
+  else{await wait(800);await holdSec(L);if(scene!=='l'+L.n)return null;const nxt=aiMove(L.g);swing(opp);L.moveAnim(L.g,nxt);L.g=nxt;L.turn='me';await wait(700)}}}
 // ---------- куча (монеты / ядра) ----------
 function pileSlots(n,cx,cy,sp,per,rowH){const o=[];for(let i=0;i<n;i++){const row=Math.floor(i/per),col=i%per,cnt=Math.min(per,n-row*per);o.push([cx+(col-(cnt-1)/2)*sp,cy-row*rowH])}return o}
 function drawPile(L,spr_,h,cx,cy,sp,per,rowH){const n=L.g.n;const sl=pileSlots(n,cx,cy,sp,per,rowH);
@@ -110,12 +112,12 @@ function drawPile(L,spr_,h,cx,cy,sp,per,rowH){const n=L.g.n;const sl=pileSlots(n
 function pileAnim(L,cx,cy,sp,per,rowH){return(a,b)=>{const sl=pileSlots(a.n,cx,cy,sp,per,rowH);const tx=L.turn==='me'||L.myTurnAnim?160:1130;
  for(let i=b.n;i<a.n;i++){const[x,y]=sl[i];(L.fly=L.fly||[]).push({x,y,tx:L.turn==='me'?170:1110,ty:520,t0:T+(i-b.n)*.08})}SFX.clang()}}
 function strip(L,k,max,y,maxW,cx){cx=cx||640;// «лестница секретов»: числа 0..max, крестики на проигрышных
- const n=Math.min(max,18),sp=Math.min(47,(maxW||1100)/(n+1));const x0=cx-n*sp/2;win('scroll',x0-72,y-46,n*sp+144,92);
+ const n=Math.min(max,18),sp=Math.min(47,(maxW||1100)/(n+1));const x0=cx-n*sp/2;win('scroll',x0-60,y-38,n*sp+120,76,false,'strip');
  for(let i=0;i<=n;i++){const x=x0+i*sp,p=!subW(k,i);if(p)spr('xmark',x,y,sp*.95,{a:.85});txt(String(i),x,y,i===L.g.n?32:24,i===L.g.n?'#ffe066':p?'#ffd8c0':'#fff3d6',{st:'#3a1a06',lw:5,maxD:sp*.8})}}
 function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:o.opp,x:1160,y:712,h:250,flip:1}];L.moveAnim=pileAnim(L,...o.pile)},
  newGame(L){const r=L.r;const pf=o.pf(r);const pool=pf?o.pP[Math.min(L.lv,2)]:o.pN[Math.min(L.lv,2)];L.g={t:'sub',k:o.k,n:pool[Math.floor(Math.random()*pool.length)]};L.pf=pf;L.fly=[]},
  async start(L){await this.loop(L)},
- async loop(L){while(L.r<ROUNDS[n-1]&&scene==='l'+n){if(o.quiz&&L.r===o.quiz.r){await this.quiz(L);continue}
+ async loop(L){while(L.r<ROUNDS[n-1]&&(await holdSec(L),scene==='l'+n)){if(o.quiz&&L.r===o.quiz.r){await this.quiz(L);continue}
    this.newGame(L);if(!L.introDone){L.introDone=1;await say(o.intro)}if(L.pf)await say(o.pfk);const res=await playGame(L,o.opp,!L.pf);if(res==null)return;
    if(res){burst(640,400,30,'spark',48);SFX.star();cheer();mood(o.opp,'laugh');await say(o.wk);L.lv++;if(await roundDone())return}
    else{SFX.bad();mood(o.opp,'laugh');await say(o.lk);if(!L.reveal){L.reveal=true;await say(o.hk)}}}},
@@ -140,9 +142,9 @@ DEF[2].opp='mey';
 const TC={x:640,y:430,R:118,K:.5};function spotXY(i){return[TC.x+SXY[i][0]*TC.R,TC.y+SXY[i][1]*TC.R*TC.K]}
 DEF[3]={init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:'mark',x:1160,y:712,h:250,flip:1}];L.ghost=true},
  async start(L){L.b=0;L.plates=[];await say('l3i');await this.loop(L)},
- async loop(L){while(L.r<ROUNDS[2]&&scene==='l3'){L.b=0;L.plates=[];L.lastAI=null;L.ghost=L.r===0||L.reveal;const res=await this.game(L);if(res==null)return;
+ async loop(L){while(L.r<ROUNDS[2]&&(await holdSec(L),scene==='l3')){L.b=0;L.plates=[];L.lastAI=null;L.ghost=L.r===0||L.reveal;const res=await this.game(L);if(res==null)return;
    if(res){SFX.star();cheer();mood('mark','laugh');await say('l3win');if(L.r===0)await say('l3d');L.lv++;if(await roundDone())return}else{SFX.bad();await say('l3lose');L.reveal=true;await say('l3h')}}},
- async game(L){let me=true;L.turn='me';while(true){if(scene!=='l3')return null;const lg=tLegal(L.b);if(!lg.length)return !me;
+ async game(L){L.banner=null;let me=true;L.turn='me';while(true){await holdSec(L);if(scene!=='l3')return null;const lg=tLegal(L.b);if(!lg.length)return !me;
    if(me){L.myTurn=true;const i=await waitInput(L);L.myTurn=false;const before=L.b,after=L.b|CF[i];
     if(tWin(before)&&tWin(after)){L.mist++;SFX.bad();oops('tim');const good=lg.find(j=>!tWin(before|CF[j]));L.flash={i:good,t0:T};
      banner(L.plates.length===0?'Первую тарелку ставь в центр стола — он сам себе зеркало!':'Это место не напротив тарелки Марка. Ставь симметрично через центр — туда, где мерцает.',true);this.put(L,i,'me');await say('oops');await wait(900)}
@@ -176,7 +178,7 @@ function gridTap(L,x,y,gb){if(!L.myTurn)return;gb=gb||GB;const m=gMoves(L.g);let
 const R4=[{rule:'king',pf:false,starts:[[5,3],[6,3],[3,4],[5,4]]},{rule:'king',pf:true,starts:[[6,4],[4,4],[6,2]]},{rule:'rook',pf:false,starts:[[5,3],[6,2],[4,1],[6,4]]},{rule:'rook',pf:true,starts:[[4,4],[3,3]]}];
 DEF[4]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'mey',x:1170,y:712,h:250,flip:1}];L.moveAnim=gridAnim(L);L.gb=GB},
  async start(L){L.g={t:'grid',rule:'king',x:5,y:3};await say('l4i');await this.loop(L)},
- async loop(L){let rule='';while(L.r<ROUNDS[3]&&scene==='l4'){const R=R4[L.r];if(R.rule!==rule){if(rule){await say('l4r');L.reveal=false}rule=R.rule}
+ async loop(L){let rule='';while(L.r<ROUNDS[3]&&(await holdSec(L),scene==='l4')){const R=R4[L.r];if(R.rule!==rule){if(rule){await say('l4r');L.reveal=false}rule=R.rule}
    const st=R.starts.filter(([x,y])=>R.pf?!gWin({t:'grid',rule:R.rule,x,y}):gWin({t:'grid',rule:R.rule,x,y}));const[x,y]=st[Math.floor(Math.random()*st.length)];L.g={t:'grid',rule:R.rule,x,y};
    if(R.pf)await say('l1pf');const res=await playGame(L,'mey',!R.pf);if(res==null)return;
    if(res){SFX.star();cheer();mood('mey','laugh');await say('l4win');if(!L.shownMap){L.shownMap=1;L.reveal=true;await say('l4map');await wait(1500)}L.lv++;if(await roundDone())return}
@@ -194,7 +196,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
   if(kd.startsWith('sub')){const k=+kd[3];const c=[];for(let n=9;n<=17;n++)if(!subW(k,n)===wantP)c.push(n);g={t:'sub',k,n:c[Math.floor(Math.random()*c.length)]};L.moveAnim=pileAnim(L,640,560,66,9,54)}
   else{const c=[];for(let x=2;x<GW;x++)for(let y=2;y<GH;y++)if(!gWin({t:'grid',rule:kd,x,y})===wantP)c.push([x,y]);const p=c[Math.floor(Math.random()*c.length)];g={t:'grid',rule:kd,x:p[0],y:p[1]};L.moveAnim=gridAnim(L)}
   L.g=g;L.kd=kd},
- async loop(L){while(L.r<ROUNDS[4]&&scene==='l5'){this.newPos(L);if(!L.introDone){L.introDone=1;await say('l5i')}await say({sub2:'gc',sub3:'gb',king:'gk',rook:'gr'}[L.kd]);
+ async loop(L){while(L.r<ROUNDS[4]&&(await holdSec(L),scene==='l5')){this.newPos(L);if(!L.introDone){L.introDone=1;await say('l5i')}await say({sub2:'gc',sub3:'gb',king:'gk',rook:'gr'}[L.kd]);
    let first;while(true){L.choose=true;const v=await waitInput(L);L.choose=false;const right=gWin(L.g);
     if(v!==right){L.mist++;SFX.bad();oops('tim');mood('flint','laugh');banner(right?'Позиция выигрышная: ходи первым и оставь Флинту проигрышную!':'Позиция проигрышная: кто ходит — проиграет. Отдай ход Флинту!',true);await say('l5wch');continue}
     first=v;L.banner=null;SFX.ok();await say('l5ok');break}
