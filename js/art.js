@@ -51,7 +51,7 @@ const INK='#4a2208',INKST='rgba(255,240,205,.85)';
 function ink(t,x,y,s,o){o=o||{};txt(t,x,y,s,o.col||'#5a2a0a',{st:o.st||INKST,lw:o.lw||Math.max(3,s*.14),al:o.al})}
 function para(t,x,y,maxW,s,o){X.font=s+'px '+FONT;const L=wrap(t,maxW),lh=s*1.2;L.forEach((l,i)=>ink(l,x,y+(i-(L.length-1)/2)*lh,s,o));return L.length*lh}
 // ---- кнопки: доска с канатами (широкие), дублон / компас (круглые) ----
-function btn(id,x,y,w,h,label,fn,o){o=o||{};UI.push({id,x,y,w,h,fn,always:o.always,dis:o.dis});const hov=Math.abs(PX-x)<w/2&&Math.abs(PY-y)<h/2;const pr=o.pulse?1+Math.sin(T*5)*.04:1;
+function btn(id,x,y,w,h,label,fn,o){o=o||{};{const k=PK();if(k>1&&!o._k){const rx=x,ry=y;const row=PUI.filter(e=>e.ry!=null&&Math.abs(e.ry-ry)<4);if(row.length>1){const xs=row.map(e=>e.rx).sort((a,b)=>a-b);let dmin=1e9;for(let i=1;i<xs.length;i++)dmin=Math.min(dmin,xs[i]-xs[i-1]);const cx=(xs[0]+xs[xs.length-1])/2,f=Math.max(1,(w*k*1.15+10)/Math.max(1,dmin));x=cx+(rx-cx)*f}o={...o,_rx:rx,_ry:ry};w*=k;h*=k;if(o.fs)o.fs*=k;o._k=1}}UI.push({id,x,y,w,h,fn,always:o.always,dis:o.dis,rx:o._rx,ry:o._ry});const hov=Math.abs(PX-x)<w/2&&Math.abs(PY-y)<h/2;const pr=o.pulse?1+Math.sin(T*5)*.04:1;
  X.save();X.translate(x,y);const sc=pr*(hov?1.06:1);X.scale(sc,sc);if(o.dis)X.globalAlpha*=.55;
  const round=w<=h*1.45;
  if(round){const d=Math.max(w,h)*1.25;
@@ -81,7 +81,7 @@ function bubbleDims(c,fs,maxW){const lh=Math.round(fs*1.23),nfs=Math.round(fs*.9
  const bi=UA.bubble,iw=okI(bi)?bi.naturalWidth:257,ih=okI(bi)?bi.naturalHeight:185;const tailF=.24;
  let bodyH=textH+padY*2,bh=bodyH;for(let k=0;k<3;k++){const kk=Math.min(bw/iw,bh/ih,1.1);bh=bodyH+tailF*ih*kk}const kk=Math.min(bw/iw,bh/ih,1.1);bodyH=bh-tailF*ih*kk;
  return{fs,lh,nfs,nh,L,bw,bh,bodyH,textH}}
-const BCFG=[[26,440],[26,560],[23,640],[23,380],[21,720],[21,320],[19,820],[19,280],[17,900],[17,240]];
+const BCFG=[[30,480],[28,520],[26,440],[26,560],[23,640],[23,380],[21,720],[21,320],[19,820],[19,280],[17,900],[17,240]];
 function drawTalk(){if(!talk){drawReacts();return}const c=cast.find(c=>c.n===talk.who);
  const key=talk.k+'|'+W+'x'+H;let D,pl;
  if(talk.dk===key&&talk.D&&(T-talk.dT<.5||talk.dpl[3]===0)){D=talk.D;pl=talk.dpl}

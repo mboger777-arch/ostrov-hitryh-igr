@@ -85,8 +85,11 @@ let cast=[];
 const NAMES={tim:['Юнга Тим','#ff7a4a'],mark:['Марк','#4a7ad8'],mey:['Мэй','#d84a7a'],flint:['Капитан Флинт','#2a9a3a'],narrator:['','#fff']};
 function cheer(){cast.forEach((c,i)=>{if(c.n!=='flint')c.jump=T+i*.08})}
 function oops(n){const c=cast.find(c=>c.n===n);if(c)c.wob=T}
-const HERO_K=1.3,HERO_KI=1.28;function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),bs=bgScale(),si=(typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0);
- const big=scene==='intro'||scene==='title'||scene==='fin';c.h=Math.min(c.h0*(big?HERO_KI:HERO_K),big?560:400);
+let PUI=[];const HERO_K=1.3,HERO_KI=1.28;
+// телефон в ландшафте: крупнее интерактив (картина и так на весь экран)
+function PK(){return (('ontouchstart' in window)||navigator.maxTouchPoints>0)&&H<=520?1.22:1}
+function heroFit(c){if(c.h0==null){c.h0=c.h;c.bx=c.x}const v=vis(),bs=bgScale(),si=(typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0);
+ const big=scene==='intro'||scene==='title'||scene==='fin';c.h=Math.min(c.h0*(big?HERO_KI:HERO_K)*(big?1:Math.min(PK(),1.12)),big?560:400*Math.min(PK(),1.1));
  const px0=(v.x0-640*(1-bs))/bs,px1=(v.x0+v.w-640*(1-bs))/bs;const safe=Math.max(si+8,16);
  const i=IM[c.n],hw=(i&&i.naturalWidth?c.h*i.naturalWidth/i.naturalHeight:c.h*.6)/2;
  const lo=Math.max(v.x0+safe,px0+safe)+hw,hi=Math.min(v.x0+v.w-safe,px1-safe)-hw;
@@ -110,7 +113,7 @@ const TOUCH=(('ontouchstart' in window)||navigator.maxTouchPoints>0)&&matchMedia
 function loop(now){DT=PORTRAIT()?0:clamp((now-last)/1000,0,.05);last=now;T+=DT;fpsA=fpsA*.95+(1/Math.max(DT,.001))*.05;
  X.setTransform(DPR,0,0,DPR,0,0);X.clearRect(0,0,W,H);
  const sx=(Math.random()-.5)*shake,sy=(Math.random()-.5)*shake;shake*=Math.pow(.004,DT);if(shake<.3)shake=0;
- X.setTransform(DPR*S,0,0,DPR*S,DPR*(OX+sx),DPR*(OY+sy));UI=[];frameBoxes();if(G.auditReq){G.auditReq=0;AUD={t:[],c:[],h:[]};G._aud=AUD}else AUD=null;stepParticles();
+ X.setTransform(DPR*S,0,0,DPR*S,DPR*(OX+sx),DPR*(OY+sy));PUI=UI;UI=[];frameBoxes();if(G.auditReq){G.auditReq=0;AUD={t:[],c:[],h:[]};G._aud=AUD}else AUD=null;stepParticles();
  try{SCN&&SCN.draw()}catch(e){console.error(e)}
  drawParticles();if(SCN&&SCN.ui)SCN.ui();fsButton();drawTalk();
  if(fade>0){const v=vis();X.fillStyle=`rgba(8,4,20,${fade})`;X.fillRect(v.x0,v.y0,v.w,v.h);fade=Math.max(0,fade-DT*2.5)}

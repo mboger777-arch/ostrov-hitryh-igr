@@ -39,10 +39,10 @@ SC.intro={enter(){cast=[{n:'tim',x:200,y:700,h:330},{n:'mark',x:420,y:700,h:290}
 // ---------- карта ----------
 const MPB=[[205,420],[420,372],[640,420],[860,372],[1075,410]];let MP=MPB.map(p=>p.slice()),MK=1;
 function mapLayout(){const v=vis(),bs=bgScale(),si=typeof SAFE!=='undefined'?SAFE.l/Math.max(S,.01):0,safe=Math.max(si+12,20);
-  const[cX,lid]=bgXY(.795*1280,.63*720);MK=clamp(1.25-S*.45,.85,1.15);
+  const[cX,lid]=bgXY(.795*1280,.63*720);MK=clamp(1.25-S*.45,.85,1.15)*PK();
   const tc=cast[0],timR=tc?tc.x+(IM[tc.n]&&IM[tc.n].naturalWidth?tc.h*IM[tc.n].naturalWidth/IM[tc.n].naturalHeight:tc.h*.6)*.5:v.x0+safe+80;const L=Math.max(timR+90*MK,bgXY(.12*1280,.55*720)[0]);
-  const R=Math.min(cX-40,bgXY(.92*1280,.55*720)[0]);const sp=Math.min(260,Math.max(140,(R-L)/4));
-  MK=Math.max(.75,Math.min(MK,(sp-14)/196));
+  const R=Math.min(cX-40,bgXY(.92*1280,.55*720)[0]);const sp=Math.min(300,Math.max(140,(R-L)/4));
+  MK=Math.max(.75,Math.min(MK,(sp-14)/196,1.4));
   MP=MPB.map((p,i)=>i===4?[cX,lid-150*MK]:[L+i*sp,(i%2?372:425)+(MK-1)*40]);
   // держим остановки в видимой зоне
   MP.forEach(p=>{p[0]=clamp(p[0],v.x0+safe+80,v.x0+v.w-safe-80);p[1]=clamp(p[1],v.y0+90,v.y0+v.h-160)});
@@ -208,7 +208,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
   win('scroll',930,150,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,205,250,22);
   if(L.turn||L.choose)win('plank',150,6,250,62);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',275,37,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
   win('scroll',150,6,250,62);for(let i=0;i<3;i++)spr('chest',210+i*65,37,40,{grey:i>=L.hp})},
- ui(L){if(L.choose){btn('first',470,650,280,74,'Хожу первым',()=>give(L,true),{fs:30});btn('second',810,650,280,74,'Ходи, Флинт',()=>give(L,false),{fs:30})}
+ ui(L){if(L.choose){btn('first',500,650,240,72,'Хожу первым',()=>give(L,true),{fs:28});btn('second',780,650,240,72,'Ходи, Флинт',()=>give(L,false),{fs:28})}
   else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  tap(L,x,y){if(L.g&&L.g.t==='grid')gridTap(L,x,y,BOSS_GB)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,choose:!!L.choose,hp:L.hp}}};levelScene(5);
@@ -223,7 +223,7 @@ SC.secret={enter(n){SEC={n,i:n-1,why:null};cast=[{n:'mey',x:150,y:712,h:250}];ru
   para(LINES[s.k].t,640,215,600,27);
   if(SEC.why)para(SEC.why,640,440,600,23,{col:SEC.ok?'#1a5a10':'#8a1a08'});
   if(SEC.ok)coinTok(640,330,60,{sc:1+.1*Math.sin(T*5),glow:1.6,rot:Math.sin(T*3)*.3});drawCast()},
- ui(){const s=SECRETS[SEC.i];if(!SEC.ok)s.o.forEach((o,i)=>btn('o'+i,420+i*220,335,178,70,o,()=>ansS(i),{fs:o.length>3?26:38}));
+ ui(){const s=SECRETS[SEC.i];if(!SEC.ok)s.o.forEach((o,i)=>btn('o'+i,430+i*210,335,165,70,o,()=>ansS(i),{fs:o.length>3?26:38}));
   btn('back',1170,50,170,60,'‹ Назад',()=>go('l'+SEC.n),{always:1,fs:28})}};
 function ansS(i){if(G.busy)return;const s=SECRETS[SEC.i];run(async()=>{if(i!==s.a){SFX.bad();oops('mey');SEC.why=s.why;await say('secw');return}
  SEC.ok=1;SEC.why=s.why;SV.secret[SEC.i]=1;save();SFX.star();burst(640,330,50,'spark',48);cheer();await say('secok');await wait(600);go('l'+SEC.n)})}
