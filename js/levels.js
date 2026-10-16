@@ -72,9 +72,9 @@ function levelScene(n){SC['l'+n]={enter(){if(LV&&LV.n===n&&LV.resume){LV.resume=
   if(n<5&&!SV.secret[n-1]&&!LV.done){const[sx,sy]=SECRET_POS[n-1];coinTok(sx,sy,13,{a:.45+.35*Math.sin(T*3),glow:.8+.4*Math.sin(T*3),rot:T})}
 },
  ui(){win('scroll',450,0,380,64);ink(LNAMES[n-1],640,32,28);for(let i=0;i<ROUNDS[n-1];i++)coinTok(640-(ROUNDS[n-1]-1)*17+i*34,82,12,{grey:i>=LV.r});
-  btn('home',74,66,84,64,'⌂',()=>{go('map')},{always:1});if(!LV.done)btn('hint',1214,58,76,64,'?',()=>{if(!G.busy)run(()=>DEF[n].hint(LV))},{fs:36});
+  btn('home',74,66,84,64,'⌂',()=>{go('map')},{always:1});if(!LV.done)btn('hint',1214,58,76,64,'?',()=>{if(!(talk&&/h$/.test(talk.k||'')))run(()=>DEF[n].hint(LV))},{fs:36});
   if(DEF[n].ui&&!LV.done)DEF[n].ui(LV);if(LV.done)endPanel(n)},
- tap(x,y){if(LV.done)return;if(n<5&&!SV.secret[n-1]&&!G.busy){const[sx,sy]=SECRET_POS[n-1];if(Math.hypot(x-sx,y-sy)<40){LV.resume=true;go('secret',n);return}}if(DEF[n].tap)DEF[n].tap(LV,x,y)}}}
+ tap(x,y){if(LV.done)return;if(n<5&&!SV.secret[n-1]&&!LV.lock){const[sx,sy]=SECRET_POS[n-1];if(Math.hypot(x-sx,y-sy)<Math.max(40,30/S)){LV.resume=true;go('secret',n);return}}if(DEF[n].tap)DEF[n].tap(LV,x,y)}}}
 function banner(t,bad,y){LV.banner={t,bad,t0:T,y}}
 async function roundDone(){LV.r++;LV.banner=null;if(LV.r>=ROUNDS[LV.n-1]){LV.done=true;LV.doneT=T;const st=LV.mist===0?3:LV.mist<=2?2:1;LV.stars=st;SV.stars[LV.n-1]=Math.max(SV.stars[LV.n-1],st);SV.open=Math.max(SV.open,Math.min(5,LV.n+1));save();cheer();const cx_=ctxNow();for(let i=0;i<3;i++)setTimeout(()=>{if(i<st&&alive(cx_)){SFX.star();burst(560+i*80,368,24,'spark',48)}},500+i*350);if(LV.n<5)await say('win');return true}return false}
 function endPanel(n){win('frame',340,110,600,430);ink(n<5?'Игра пройдена!':'Флинт побеждён!',640,215,40,{col:'#8a4a08'});
@@ -99,7 +99,7 @@ async function playGame(L,opp,meFirst){L.turn=meFirst?'me':'ai';L.over=false;L.b
  while(true){if(gEnd(L.g)){L.over=true;return L.turn==='ai'}// ход перешёл к ИИ, значит конец сделал ребёнок
   await holdSec(L);if(scene!=='l'+L.n)return null;
   if(L.turn==='me'){const before=L.g;L.myTurn=true;const nxt=await waitInput(L);L.myTurn=false;L.flash=null;
-   if(gWin(before)&&gWin(nxt)){L.mist++;L.lv=Math.max(0,L.lv-1);SFX.bad();oops('tim');L.flash={g:gMoves(before).find(p=>!gWin(p)),t0:T};banner(explain(L,before,nxt,opp),true);L.moveAnim(before,nxt);await say('oops');await wait(1200)}
+   if(gWin(before)&&gWin(nxt)){L.mist++;L.lv=Math.max(0,L.lv-1);SFX.bad();oops('tim');L.flash={g:gMoves(before).find(p=>!gWin(p)),t0:T};banner(explain(L,before,nxt,opp)+' Попробуй ещё раз!',true);sayNow('oops');continue}
    else{L.moveAnim(before,nxt);if(gWin(before)&&!gEnd(nxt)&&Math.random()<.35){SFX.ok();mood('tim','happy')}await wait(650)}
    L.g=nxt;L.turn='ai'}
   else{await wait(800);await holdSec(L);if(scene!=='l'+L.n)return null;const nxt=aiMove(L.g);swing(opp);L.moveAnim(L.g,nxt);L.g=nxt;L.turn='me';await wait(700)}}}
@@ -118,18 +118,17 @@ function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:
  newGame(L){const r=L.r;const pf=o.pf(r);const pool=pf?o.pP[Math.min(L.lv,2)]:o.pN[Math.min(L.lv,2)];L.g={t:'sub',k:o.k,n:pool[Math.floor(Math.random()*pool.length)]};L.pf=pf;L.fly=[]},
  async start(L){await this.loop(L)},
  async loop(L){while(L.r<ROUNDS[n-1]&&(await holdSec(L),scene==='l'+n)){if(o.quiz&&L.r===o.quiz.r){await this.quiz(L);continue}
-   this.newGame(L);if(!L.introDone){L.introDone=1;await say(o.intro)}if(L.pf)await say(o.pfk);const res=await playGame(L,o.opp,!L.pf);if(res==null)return;
+   this.newGame(L);if(!L.introDone){L.introDone=1;say(o.intro).catch(()=>{})}if(L.pf)say(o.pfk).catch(()=>{});const res=await playGame(L,o.opp,!L.pf);if(res==null)return;
    if(res){burst(640,400,30,'spark',48);SFX.star();cheer();mood(o.opp,'laugh');await say(o.wk);L.lv++;if(await roundDone())return}
-   else{SFX.bad();mood(o.opp,'laugh');await say(o.lk);if(!L.reveal){L.reveal=true;await say(o.hk)}}}},
- async quiz(L){L.q={opts:o.quiz.opts,a:o.quiz.a};await say(o.quiz.k);const v=await waitInput(L);L.q=null;
-  if(v!==o.quiz.a){L.mist++;SFX.bad();oops('tim');banner(o.quiz.why,true);await say(o.quiz.wk);await wait(400);return}
+   else{SFX.bad();mood(o.opp,'laugh');sayNow(o.lk);if(!L.reveal){L.reveal=true;say(o.hk).catch(()=>{})}}}},
+ async quiz(L){L.q={opts:o.quiz.opts,a:o.quiz.a,tried:{}};say(o.quiz.k).catch(()=>{});let v;while(true){v=await waitInput(L);if(v===o.quiz.a)break;L.mist++;L.q.tried[v]=1;SFX.bad();oops('tim');banner(o.quiz.why,true);sayNow(o.quiz.wk)}L.q=null;
   SFX.ok();cheer();banner(o.quiz.ok);await say(o.quiz.ok_k);await wait(500);L.banner=null;await roundDone()},
  async hint(L){L.reveal=true;await say(o.hk)},
  draw(L){if(!L.g)return;drawPile(L,...o.draw);win('plank',1010,150,250,70);txt((o.k===2?'Монет: ':'Ядер: ')+L.g.n,1135,186,30,'#fff0c8',{st:'#2a1004'});
   if(L.reveal)strip(L,o.k,Math.max(L.g.n,o.k===2?12:16),o.stripY,800);
   if(L.q){win('frame',300,150,680,330);para(LINES[o.quiz.k].t,640,230,560,28)}
   if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
- ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>give(L,i),{fs:28}));return}
+ ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>{if(!L.q.tried[i])give(L,i)},{fs:28,dis:!!L.q.tried[i]}));return}
   if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,q:L.q?L.q.a:null}}};levelScene(n)}
 subLevel(1,{opp:'mark',k:2,intro:'l1i',hk:'l1h',wk:'l1win',lk:'l1lose',pfk:'l1pf',pf:r=>r===2,
@@ -141,13 +140,13 @@ DEF[2].opp='mey';
 // ---------- УРОВЕНЬ 3: тарелки, симметрия ----------
 const TC={x:640,y:430,R:118,K:.5};function spotXY(i){return[TC.x+SXY[i][0]*TC.R,TC.y+SXY[i][1]*TC.R*TC.K]}
 DEF[3]={init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:'mark',x:1160,y:712,h:250,flip:1}];L.ghost=true},
- async start(L){L.b=0;L.plates=[];await say('l3i');await this.loop(L)},
+ async start(L){L.b=0;L.plates=[];say('l3i').catch(()=>{});await this.loop(L)},
  async loop(L){while(L.r<ROUNDS[2]&&(await holdSec(L),scene==='l3')){L.b=0;L.plates=[];L.lastAI=null;L.ghost=L.r===0||L.reveal;const res=await this.game(L);if(res==null)return;
-   if(res){SFX.star();cheer();mood('mark','laugh');await say('l3win');if(L.r===0)await say('l3d');L.lv++;if(await roundDone())return}else{SFX.bad();await say('l3lose');L.reveal=true;await say('l3h')}}},
+   if(res){SFX.star();cheer();mood('mark','laugh');await say('l3win');if(L.r===0)await say('l3d');L.lv++;if(await roundDone())return}else{SFX.bad();sayNow('l3lose');L.reveal=true;say('l3h').catch(()=>{})}}},
  async game(L){L.banner=null;let me=true;L.turn='me';while(true){await holdSec(L);if(scene!=='l3')return null;const lg=tLegal(L.b);if(!lg.length)return !me;
    if(me){L.myTurn=true;const i=await waitInput(L);L.myTurn=false;const before=L.b,after=L.b|CF[i];
     if(tWin(before)&&tWin(after)){L.mist++;SFX.bad();oops('tim');const good=lg.find(j=>!tWin(before|CF[j]));L.flash={i:good,t0:T};
-     banner(L.plates.length===0?'Первую тарелку ставь в центр стола — он сам себе зеркало!':'Это место не напротив тарелки Марка. Ставь симметрично через центр — туда, где мерцает.',true);this.put(L,i,'me');await say('oops');await wait(900)}
+     banner(L.plates.length===0?'Первую тарелку ставь в центр стола — он сам себе зеркало!':'Это место не напротив тарелки Марка. Ставь симметрично через центр — туда, где мерцает.',true);sayNow('oops');continue}
     else{this.put(L,i,'me');await wait(600)}}
    else{await wait(850);const lg2=tLegal(L.b);const good=lg2.filter(j=>!tWin(L.b|CF[j]));const pool=good.length?good:lg2;const i=pool[Math.floor(Math.random()*pool.length)];swing('mark');this.put(L,i,'ai');L.lastAI=i;
     if(L.ghost&&tLegal(L.b).includes(mirrorOf(i))&&!L.mirSaid&&L.plates.length<=3){L.mirSaid=1;await say('l3mir')}await wait(400)}
@@ -165,7 +164,7 @@ DEF[3]={init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:'mark',x:1160,y:712,h:250
  tap(L,x,y){if(!L.myTurn)return;let best=-1,bd=1e9;tLegal(L.b).forEach(i=>{const[sx,sy]=spotXY(i);const d=Math.hypot(x-sx,(y-sy)/TC.K);if(d<bd){bd=d;best=i}});if(best>=0&&bd<TC.R*.5)give(L,best)},
  info(L){return{r:L.r,b:L.b,my:!!L.myTurn,best:L.b!=null?tLegal(L.b).find(j=>!tWin(L.b|CF[j])):null,legal:L.b!=null?tLegal(L.b):[]}}};levelScene(3);
 // ---------- УРОВЕНЬ 4: корабль на карте ----------
-const GB={x:615,y:440,c:76};function cellXY(x,y,gb){gb=gb||GB;return[gb.x+(x-(GW-1)/2)*gb.c,gb.y+((GH-1)/2-y)*gb.c]}
+const GB={x:668,y:432,c:108};function cellXY(x,y,gb){gb=gb||GB;return[gb.x+(x-(GW-1)/2)*gb.c,gb.y+((GH-1)/2-y)*gb.c]}
 function drawGrid(L,gb){gb=gb||GB;const g=L.g;if(!g)return;const reach=L.myTurn?gMoves(g):[];const P=gridP(g.rule);
  for(let x=0;x<GW;x++)for(let y=0;y<GH;y++){const[cx,cy]=cellXY(x,y,gb);const r=reach.some(p=>p.x===x&&p.y===y);X.save();X.globalAlpha*=r?1:.45;if(r){X.globalCompositeOperation='source-over'}win('frame',cx-gb.c*.47,cy-gb.c*.47,gb.c*.94,gb.c*.94,0,'cell');X.restore();if(r)spr('coin',cx,cy,gb.c*.28,{a:.55+.3*Math.sin(T*4+x+y),glow:1});
   if(L.reveal&&!P[x+','+y]&&!(x===0&&y===0))spr('xmark',cx,cy,gb.c*.7,{a:.75})}
@@ -177,39 +176,39 @@ function gridAnim(L){return(a,b)=>{L.sa={a,t0:T};SFX.whoosh();setTimeout(()=>{co
 function gridTap(L,x,y,gb){if(!L.myTurn)return;gb=gb||GB;const m=gMoves(L.g);let best=null,bd=1e9;m.forEach(p=>{const[cx,cy]=cellXY(p.x,p.y,gb);const d=Math.hypot(x-cx,y-cy);if(d<bd){bd=d;best=p}});if(best&&bd<gb.c*.6)give(L,best)}
 const R4=[{rule:'king',pf:false,starts:[[5,3],[6,3],[3,4],[5,4]]},{rule:'king',pf:true,starts:[[6,4],[4,4],[6,2]]},{rule:'rook',pf:false,starts:[[5,3],[6,2],[4,1],[6,4]]},{rule:'rook',pf:true,starts:[[4,4],[3,3]]}];
 DEF[4]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'mey',x:1170,y:712,h:250,flip:1}];L.moveAnim=gridAnim(L);L.gb=GB},
- async start(L){L.g={t:'grid',rule:'king',x:5,y:3};await say('l4i');await this.loop(L)},
+ async start(L){L.g={t:'grid',rule:'king',x:5,y:3};say('l4i').catch(()=>{});await this.loop(L)},
  async loop(L){let rule='';while(L.r<ROUNDS[3]&&(await holdSec(L),scene==='l4')){const R=R4[L.r];if(R.rule!==rule){if(rule){await say('l4r');L.reveal=false}rule=R.rule}
    const st=R.starts.filter(([x,y])=>R.pf?!gWin({t:'grid',rule:R.rule,x,y}):gWin({t:'grid',rule:R.rule,x,y}));const[x,y]=st[Math.floor(Math.random()*st.length)];L.g={t:'grid',rule:R.rule,x,y};
-   if(R.pf)await say('l1pf');const res=await playGame(L,'mey',!R.pf);if(res==null)return;
+   if(R.pf)say('l1pf').catch(()=>{});const res=await playGame(L,'mey',!R.pf);if(res==null)return;
    if(res){SFX.star();cheer();mood('mey','laugh');await say('l4win');if(!L.shownMap){L.shownMap=1;L.reveal=true;await say('l4map');await wait(1500)}L.lv++;if(await roundDone())return}
-   else{SFX.bad();await say('l4lose');L.reveal=true;await say(rule==='king'?'l4h':'l4rh')}}},
+   else{SFX.bad();sayNow('l4lose');L.reveal=true;say(rule==='king'?'l4h':'l4rh').catch(()=>{})}}},
  async hint(L){L.reveal=true;await say(L.g&&L.g.rule==='rook'?'l4rh':'l4h')},
  draw(L){drawGrid(L);if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':'Ходит Мэй',275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004'});
-  if(L.g){win('scroll',930,150,330,110);para(L.g.rule==='king'?'На 1 клетку влево, вниз или наискосок':'Влево или вниз на сколько угодно',1095,205,250,22)}},
+  if(L.g){win('scroll',1046,150,226,150);para(L.g.rule==='king'?'На 1 клетку влево, вниз или наискосок':'Влево или вниз на сколько угодно',1159,225,170,22)}},
  tap(L,x,y){gridTap(L,x,y)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn}}};levelScene(4);
 // ---------- УРОВЕНЬ 5: Капитан Флинт ----------
-const BOSS_GB={x:640,y:372,c:64};
+const BOSS_GB={x:620,y:356,c:88};
 DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:330,flip:1}];L.hp=3;L.kinds=shuffle(['sub2','sub3','king','rook']);L.gb=BOSS_GB},
  async start(L){await this.loop(L)},
  newPos(L){const kd=L.kinds[L.r%4];const wantP=Math.random()<.5;let g;
   if(kd.startsWith('sub')){const k=+kd[3];const c=[];for(let n=9;n<=17;n++)if(!subW(k,n)===wantP)c.push(n);g={t:'sub',k,n:c[Math.floor(Math.random()*c.length)]};L.moveAnim=pileAnim(L,640,560,66,9,54)}
   else{const c=[];for(let x=2;x<GW;x++)for(let y=2;y<GH;y++)if(!gWin({t:'grid',rule:kd,x,y})===wantP)c.push([x,y]);const p=c[Math.floor(Math.random()*c.length)];g={t:'grid',rule:kd,x:p[0],y:p[1]};L.moveAnim=gridAnim(L)}
   L.g=g;L.kd=kd},
- async loop(L){while(L.r<ROUNDS[4]&&(await holdSec(L),scene==='l5')){this.newPos(L);if(!L.introDone){L.introDone=1;await say('l5i')}await say({sub2:'gc',sub3:'gb',king:'gk',rook:'gr'}[L.kd]);
+ async loop(L){while(L.r<ROUNDS[4]&&(await holdSec(L),scene==='l5')){this.newPos(L);if(!L.introDone){L.introDone=1;say('l5i').catch(()=>{})}say({sub2:'gc',sub3:'gb',king:'gk',rook:'gr'}[L.kd]).catch(()=>{});
    let first;while(true){L.choose=true;const v=await waitInput(L);L.choose=false;const right=gWin(L.g);
-    if(v!==right){L.mist++;SFX.bad();oops('tim');mood('flint','laugh');banner(right?'Позиция выигрышная: ходи первым и оставь Флинту проигрышную!':'Позиция проигрышная: кто ходит — проиграет. Отдай ход Флинту!',true);await say('l5wch');continue}
+    if(v!==right){L.mist++;SFX.bad();oops('tim');mood('flint','laugh');banner(right?'Позиция выигрышная: ходи первым и оставь Флинту проигрышную!':'Позиция проигрышная: кто ходит — проиграет. Отдай ход Флинту!',true);sayNow('l5wch');continue}
     first=v;L.banner=null;SFX.ok();await say('l5ok');break}
    const res=await playGame(L,'flint',first);if(res==null)return;
    if(res){L.hp--;const c=cast.find(c=>c.n==='flint');if(c)c.hit=T;shake=10;SFX.hit();burst(1140,450,30,'spark',48);if(L.hp>0)await say('l5hit');else await say('l5end');if(await roundDone())return}
-   else{SFX.bad();mood('flint','laugh');await say('l5lose');L.reveal=true}}},
+   else{SFX.bad();mood('flint','laugh');sayNow('l5lose');L.reveal=true}}},
  async hint(L){L.reveal=true;await say('l5h')},
  draw(L){if(!L.g)return;if(L.g.t==='sub'){drawPile(L,L.g.k===2?'coin':'ball',L.g.k===2?58:64,640,560,66,9,54);win('plank',515,100,250,62);txt((L.g.k===2?'Монет: ':'Ядер: ')+L.g.n,640,132,28,'#fff0c8',{st:'#2a1004'});if(L.reveal)strip(L,L.g.k,Math.max(L.g.n,12),448,600,600)}
-  else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-50,BOSS_GB.y-GH*BOSS_GB.c/2-46,GW*BOSS_GB.c+100,GH*BOSS_GB.c+92);drawGrid(L,BOSS_GB)}
-  win('scroll',930,150,330,110);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1095,205,250,22);
+  else{win('frame',BOSS_GB.x-GW*BOSS_GB.c/2-30,BOSS_GB.y-GH*BOSS_GB.c/2-22,GW*BOSS_GB.c+60,GH*BOSS_GB.c+44);drawGrid(L,BOSS_GB)}
+  win('scroll',990,150,280,130);para({sub2:'Берём 1 или 2',sub3:'Берём от 1 до 3',king:'На 1 клетку влево, вниз или наискосок',rook:'Влево или вниз на сколько угодно'}[L.kd],1130,215,210,22);
   if(L.turn||L.choose)win('plank',150,6,250,62);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',275,37,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
   win('scroll',150,6,250,62);for(let i=0;i<3;i++)spr('chest',210+i*65,37,40,{grey:i>=L.hp})},
- ui(L){if(L.choose){btn('first',500,650,240,72,'Хожу первым',()=>give(L,true),{fs:28});btn('second',780,650,240,72,'Ходи, Флинт',()=>give(L,false),{fs:28})}
+ ui(L){if(L.choose){btn('first',500,656,240,64,'Хожу первым',()=>give(L,true),{fs:28});btn('second',780,656,240,64,'Ходи, Флинт',()=>give(L,false),{fs:28})}
   else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
  tap(L,x,y){if(L.g&&L.g.t==='grid')gridTap(L,x,y,BOSS_GB)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,choose:!!L.choose,hp:L.hp}}};levelScene(5);
@@ -226,8 +225,8 @@ SC.secret={enter(n){SEC={n,i:n-1,why:null};cast=[{n:'mey',x:150,y:712,h:250}];ru
   if(SEC.ok)coinTok(640,330,60,{sc:1+.1*Math.sin(T*5),glow:1.6,rot:Math.sin(T*3)*.3});drawCast()},
  ui(){const s=SECRETS[SEC.i];if(!SEC.ok)s.o.forEach((o,i)=>btn('o'+i,430+i*210,335,165,70,o,()=>ansS(i),{fs:o.length>3?26:38}));
   btn('back',1170,50,170,60,'‹ Назад',()=>go('l'+SEC.n),{always:1,fs:28})}};
-function ansS(i){if(G.busy)return;const s=SECRETS[SEC.i];run(async()=>{if(i!==s.a){SFX.bad();oops('mey');SEC.why=s.why;await say('secw');return}
- SEC.ok=1;SEC.why=s.why;SV.secret[SEC.i]=1;save();SFX.star();burst(640,330,50,'spark',48);cheer();await say('secok');await wait(600);go('l'+SEC.n)})}
+function ansS(i){if(SEC.lock)return;const s=SECRETS[SEC.i];run(async()=>{if(i!==s.a){SFX.bad();oops('mey');SEC.why=s.why;sayNow('secw');return}
+ SEC.lock=1;SEC.ok=1;SEC.why=s.why;SV.secret[SEC.i]=1;save();SFX.star();burst(640,330,50,'spark',48);cheer();await say('secok');await wait(600);go('l'+SEC.n)})}
 // ---------- финал ----------
 SC.fin={enter(){cast=[{n:'tim',x:240,y:705,h:300},{n:'mark',x:430,y:705,h:270},{n:'mey',x:600,y:705,h:270},{n:'flint',x:1000,y:712,h:380,flip:1}];
  run(async()=>{cheer();await say('fin');await say('l5end')})},

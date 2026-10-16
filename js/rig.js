@@ -25,7 +25,8 @@ function drawHero(c){const im=IM[c.n],R=RIG[c.n];if(!okI(im))return;const ph=c.x
  if(c.jump&&T>c.jump&&T-c.jump<.75){const u=(T-c.jump)/.75;if(u<.15){sy-=.12*(u/.15);sx+=.08*(u/.15)}else if(u<.85){const k=(u-.15)/.7;dy-=Math.sin(k*Math.PI)*70;sy+=.08*Math.sin(k*Math.PI);sx-=.05*Math.sin(k*Math.PI)}else{const k=(u-.85)/.15;sy-=.1*(1-k);sx+=.07*(1-k)}}
  const puz=c.wob&&T-c.wob<1.6?1-(T-c.wob)/1.6:0;
  const hit=c.hit&&T-c.hit<1?1-(T-c.hit):0;if(hit){sy-=.12*hit*Math.abs(Math.sin((T-c.hit)*14));sx+=.06*hit;rot+=Math.sin((T-c.hit)*16)*.07*hit}
- const h=c.h,w=h*im.width/im.height;
+ sx=sy=1+Math.sin(T*2.2+ph)*.008;// только равномерный масштаб: пропорции спрайта не меняются, опора — ступни
+ const h=c.h,w=h*im.naturalWidth/im.naturalHeight;(G.gnd_=G.gnd_||[]).push({n:c.n,x:c.x,feet:c.y,w:w*sx,h:h*sy,nr:im.naturalWidth/im.naturalHeight});
  const lk=G.look||{x:PX,y:PY};const dir=clamp((lk.x-c.x)/600,-1,1)*(c.flip?-1:1);
   let headA=dir*.05+Math.sin(T*.9+ph)*.02+puz*.15*Math.sin(Math.min(1,(1-puz)*8)*1.57)+(talking?Math.sin((T-talk.t0)*3.3)*.025:0);
  if(c.mood==='laugh'&&T-c.moodT<1.5)headA+=Math.sin(T*28)*.05;
