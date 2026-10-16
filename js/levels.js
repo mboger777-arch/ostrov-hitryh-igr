@@ -165,7 +165,7 @@ DEF[3]={init(L){L.cast=[{n:'tim',x:110,y:712,h:230},{n:'mark',x:1160,y:712,h:250
  info(L){return{r:L.r,b:L.b,my:!!L.myTurn,best:L.b!=null?tLegal(L.b).find(j=>!tWin(L.b|CF[j])):null,legal:L.b!=null?tLegal(L.b):[]}}};levelScene(3);
 // ---------- УРОВЕНЬ 4: корабль на карте ----------
 const GB={x:668,y:432,c:108};function cellXY(x,y,gb){gb=gb||GB;return[gb.x+(x-(GW-1)/2)*gb.c,gb.y+((GH-1)/2-y)*gb.c]}
-function drawGrid(L,gb){gb=gb||GB;const g=L.g;if(!g)return;const reach=L.myTurn?gMoves(g):[];const P=gridP(g.rule);
+function drawGrid(L,gb){gb=gb||GB;const g=L.g;if(!g)return;const reach=L.myTurn?gMoves(g).filter(p=>!(L.bad&&L.bad[fmt(p)])):[];const P=gridP(g.rule);
  for(let x=0;x<GW;x++)for(let y=0;y<GH;y++){const[cx,cy]=cellXY(x,y,gb);const r=reach.some(p=>p.x===x&&p.y===y);X.save();X.globalAlpha*=r?1:.45;if(r){X.globalCompositeOperation='source-over'}win('frame',cx-gb.c*.47,cy-gb.c*.47,gb.c*.94,gb.c*.94,0,'cell');X.restore();if(r)spr('coin',cx,cy,gb.c*.28,{a:.55+.3*Math.sin(T*4+x+y),glow:1});
   if(L.reveal&&!P[x+','+y]&&!(x===0&&y===0))spr('xmark',cx,cy,gb.c*.7,{a:.75})}
  const[tx,ty]=cellXY(0,0,gb);spr('chest',tx,ty-6,gb.c*1.05);
