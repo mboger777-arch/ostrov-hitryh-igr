@@ -98,8 +98,8 @@ async function holdSec(L){while(scene==='secret'&&LV===L&&L.resume)await wait(15
 async function playGame(L,opp,meFirst){L.turn=meFirst?'me':'ai';L.over=false;L.banner=null;
  while(true){if(gEnd(L.g)){L.over=true;return L.turn==='ai'}// ход перешёл к ИИ, значит конец сделал ребёнок
   await holdSec(L);if(scene!=='l'+L.n)return null;
-  if(L.turn==='me'){const before=L.g;L.myTurn=true;const nxt=await waitInput(L);L.myTurn=false;L.flash=null;
-   if(gWin(before)&&gWin(nxt)){L.mist++;L.lv=Math.max(0,L.lv-1);SFX.bad();oops('tim');L.flash={g:gMoves(before).find(p=>!gWin(p)),t0:T};banner(explain(L,before,nxt,opp)+' Попробуй ещё раз!',true);sayNow('oops');continue}
+  if(L.turn==='me'){const before=L.g;if(L.badFor!==before){L.badFor=before;L.bad={}}L.myTurn=true;const nxt=await waitInput(L);L.myTurn=false;L.flash=null;
+   if(gWin(before)&&gWin(nxt)){L.mist++;L.lv=Math.max(0,L.lv-1);SFX.bad();oops('tim');L.bad[fmt(nxt)]=1;L.flash={g:gMoves(before).find(p=>!gWin(p)),t0:T};banner(explain(L,before,nxt,opp)+' Попробуй ещё раз!',true);sayNow('oops');continue}
    else{L.moveAnim(before,nxt);if(gWin(before)&&!gEnd(nxt)&&Math.random()<.35){SFX.ok();mood('tim','happy')}await wait(650)}
    L.g=nxt;L.turn='ai'}
   else{await wait(800);await holdSec(L);if(scene!=='l'+L.n)return null;const nxt=aiMove(L.g);swing(opp);L.moveAnim(L.g,nxt);L.g=nxt;L.turn='me';await wait(700)}}}
@@ -129,7 +129,7 @@ function subLevel(n,o){DEF[n]={opp:o.opp,init(L){L.cast=[{n:'tim',x:110,y:712,h:
   if(L.q){win('frame',300,150,680,330);para(LINES[o.quiz.k].t,640,230,560,28)}
   if(L.turn||L.choose||L.myTurn)win('plank',150,6,250,62);if(L.turn||L.choose||L.myTurn)txt(L.myTurn?'Твой ход':L.over?'':'Ходит '+nameOf(o.opp),275,37,28,L.myTurn?'#ffe066':'#fff0c8',{st:'#2a1004',maxW:200})},
  ui(L){if(L.q){L.q.opts.forEach((t,i)=>btn('q'+i,420+i*220,400,200,70,t,()=>{if(!L.q.tried[i])give(L,i)},{fs:28,dis:!!L.q.tried[i]}));return}
-  if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
+  if(L.myTurn&&!L.done)for(let t=1;t<=o.k;t++)btn('t'+t,640+(t-(o.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n||!!(L.bad&&L.bad[String(L.g.n-t)]),fs:32})},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,q:L.q?L.q.a:null}}};levelScene(n)}
 subLevel(1,{opp:'mark',k:2,intro:'l1i',hk:'l1h',wk:'l1win',lk:'l1lose',pfk:'l1pf',pf:r=>r===2,
  pN:[[4,5,7],[7,8,10],[11,13,14,16]],pP:[[6],[9],[12,15]],pile:[640,470,64,9,48],draw:['coin',62,640,470,64,9,48],stripY:528});
@@ -173,7 +173,7 @@ function drawGrid(L,gb){gb=gb||GB;const g=L.g;if(!g)return;const reach=L.myTurn?
  let[sx,sy]=cellXY(g.x,g.y,gb);if(L.sa){const u=ease((T-L.sa.t0)/.55);if(u<1){const[ax,ay]=cellXY(L.sa.a.x,L.sa.a.y,gb);sx=ax+(sx-ax)*u;sy=ay+(sy-ay)*u}}
  spr('ship',sx,sy-4+Math.sin(T*2.5)*3,gb.c*1.15,{rot:Math.sin(T*1.8)*.06})}
 function gridAnim(L){return(a,b)=>{L.sa={a,t0:T};SFX.whoosh();setTimeout(()=>{const[x,y]=cellXY(b.x,b.y,L.gb);drops(x,y+20,10)},450)}}
-function gridTap(L,x,y,gb){if(!L.myTurn)return;gb=gb||GB;const m=gMoves(L.g);let best=null,bd=1e9;m.forEach(p=>{const[cx,cy]=cellXY(p.x,p.y,gb);const d=Math.hypot(x-cx,y-cy);if(d<bd){bd=d;best=p}});if(best&&bd<gb.c*.6)give(L,best)}
+function gridTap(L,x,y,gb){if(!L.myTurn)return;gb=gb||GB;const m=gMoves(L.g);let best=null,bd=1e9;m.forEach(p=>{if(L.bad&&L.bad[fmt(p)])return;const[cx,cy]=cellXY(p.x,p.y,gb);const d=Math.hypot(x-cx,y-cy);if(d<bd){bd=d;best=p}});if(best&&bd<gb.c*.6)give(L,best)}
 const R4=[{rule:'king',pf:false,starts:[[5,3],[6,3],[3,4],[5,4]]},{rule:'king',pf:true,starts:[[6,4],[4,4],[6,2]]},{rule:'rook',pf:false,starts:[[5,3],[6,2],[4,1],[6,4]]},{rule:'rook',pf:true,starts:[[4,4],[3,3]]}];
 DEF[4]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'mey',x:1170,y:712,h:250,flip:1}];L.moveAnim=gridAnim(L);L.gb=GB},
  async start(L){L.g={t:'grid',rule:'king',x:5,y:3};say('l4i').catch(()=>{});await this.loop(L)},
@@ -209,7 +209,7 @@ DEF[5]={init(L){L.cast=[{n:'tim',x:100,y:712,h:220},{n:'flint',x:1140,y:712,h:33
   if(L.turn||L.choose)win('plank',150,6,250,62);if(L.turn||L.choose)txt(L.choose?'Кто ходит?':L.myTurn?'Твой ход':'Ходит Флинт',275,37,28,L.myTurn||L.choose?'#ffe066':'#fff0c8',{st:'#2a1004'});
   win('scroll',150,6,250,62);for(let i=0;i<3;i++)spr('chest',210+i*65,37,40,{grey:i>=L.hp})},
  ui(L){if(L.choose){btn('first',500,656,240,64,'Хожу первым',()=>give(L,true),{fs:28});btn('second',780,656,240,64,'Ходи, Флинт',()=>give(L,false),{fs:28})}
-  else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n,fs:32})},
+  else if(L.myTurn&&L.g.t==='sub')for(let t=1;t<=L.g.k;t++)btn('t'+t,640+(t-(L.g.k+1)/2)*230,650,200,74,'Взять '+t,()=>{if(t<=L.g.n)give(L,{...L.g,n:L.g.n-t})},{dis:t>L.g.n||!!(L.bad&&L.bad[String(L.g.n-t)]),fs:32})},
  tap(L,x,y){if(L.g&&L.g.t==='grid')gridTap(L,x,y,BOSS_GB)},
  info(L){return{r:L.r,g:L.g,my:!!L.myTurn,choose:!!L.choose,hp:L.hp}}};levelScene(5);
 // ---------- тайные комнаты ----------
